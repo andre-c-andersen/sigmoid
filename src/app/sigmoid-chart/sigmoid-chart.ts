@@ -22,14 +22,13 @@ export class SigmoidChart implements AfterViewInit {
   private currentYMin?: number;
   private currentYMax?: number;
   private lastScaleChange = 0;
-  private shrinkStableCount = 0;
+  private shrinkStableCountMin = 0;
+  private shrinkStableCountMax = 0;
 
   // Generalized logistic function parameters
   private _A = 0;     // Lower asymptote
   private _K = 1;     // Upper asymptote
   private _B = 1;     // Growth rate
-  private _Q = 1;     // Position parameter
-  private _C = 1;     // Typically 1
   private _nu = 1;    // Affects near which asymptote growth occurs
   private _T = 0;     // Horizontal shift (inflection point position)
 
@@ -43,17 +42,17 @@ export class SigmoidChart implements AfterViewInit {
   get B(): number { return this._B; }
   set B(value: number | string) { this._B = Number(value); }
 
-  get Q(): number { return this._Q; }
-  set Q(value: number | string) { this._Q = Number(value); }
-
-  get C(): number { return this._C; }
-  set C(value: number | string) { this._C = Number(value); }
-
   get nu(): number { return this._nu; }
   set nu(value: number | string) { this._nu = Number(value); }
 
   get T(): number { return this._T; }
   set T(value: number | string) { this._T = Number(value); }
+
+  // C and Q are now derived (not user-controlled)
+  // C = 1 (fixed for clean interpretation of K as upper asymptote)
+  // Q = ν (makes T exactly the inflection point time)
+  get C(): number { return 1; }
+  get Q(): number { return this._nu; }
 
   ngAfterViewInit(): void {
     this.createChart();
@@ -160,7 +159,8 @@ export class SigmoidChart implements AfterViewInit {
       this.currentYMin = desiredMin;
       this.currentYMax = desiredMax;
       this.lastScaleChange = now;
-      this.shrinkStableCount = 0;
+      this.shrinkStableCountMin = 0;
+      this.shrinkStableCountMax = 0;
       return { min: this.currentYMin, max: this.currentYMax };
     }
 
@@ -177,7 +177,8 @@ export class SigmoidChart implements AfterViewInit {
 
     if (expanded) {
       this.lastScaleChange = now;
-      this.shrinkStableCount = 0;
+      this.shrinkStableCountMin = 0;
+      this.shrinkStableCountMax = 0;
       return { min: this.currentYMin, max: this.currentYMax };
     }
 
@@ -188,32 +189,36 @@ export class SigmoidChart implements AfterViewInit {
       // Try to shrink max independently
       const candidateMax = this.stepDown(this.currentYMax);
       if (dataMax <= candidateMax) {
-        this.shrinkStableCount++;
-        if (this.shrinkStableCount >= this.SHRINK_STABLE_THRESHOLD) {
+        this.shrinkStableCountMax++;
+        if (this.shrinkStableCountMax >= this.SHRINK_STABLE_THRESHOLD) {
           this.currentYMax = candidateMax;
           shrunk = true;
+          this.shrinkStableCountMax = 0;
         }
+      } else {
+        this.shrinkStableCountMax = 0;
       }
 
       // Try to shrink min independently
       const candidateMin = this.stepDown(this.currentYMin);
       if (dataMin >= candidateMin) {
-        this.shrinkStableCount++;
-        if (this.shrinkStableCount >= this.SHRINK_STABLE_THRESHOLD) {
+        this.shrinkStableCountMin++;
+        if (this.shrinkStableCountMin >= this.SHRINK_STABLE_THRESHOLD) {
           this.currentYMin = candidateMin;
           shrunk = true;
+          this.shrinkStableCountMin = 0;
         }
+      } else {
+        this.shrinkStableCountMin = 0;
       }
 
-      // Reset counter if neither can shrink, or reset after successful shrink
-      if (!(dataMax <= candidateMax && dataMin >= candidateMin)) {
-        this.shrinkStableCount = 0;
-      } else if (shrunk) {
+      // Update last scale change if either axis shrunk
+      if (shrunk) {
         this.lastScaleChange = now;
-        this.shrinkStableCount = 0;
       }
     } else {
-      this.shrinkStableCount = 0;
+      this.shrinkStableCountMin = 0;
+      this.shrinkStableCountMax = 0;
     }
 
     return { min: this.currentYMin, max: this.currentYMax };
@@ -222,8 +227,9 @@ export class SigmoidChart implements AfterViewInit {
   private updateChart(): void {
     if (!this.chart) return;
 
-    const generalizedLogisticData = this.generateGeneralizedLogisticData();
-    this.chart.data.datasets[0].data = generalizedLogisticData;
+    const { sigmoid, exponential } = this.generateData();
+    this.chart.data.datasets[0].data = sigmoid;
+    this.chart.data.datasets[1].data = exponential;
 
     // Update Y-axis scale based on asymptotes
     const { min, max } = this.calculateYAxisRange();
@@ -240,6 +246,15 @@ export class SigmoidChart implements AfterViewInit {
     const exponential = Math.exp(-this.B * (t - this.T));
     const denominator = Math.pow(this.C + this.Q * exponential, 1 / this.nu);
     return this.A + (this.K - this.A) / denominator;
+  }
+
+  private earlyPhaseExponential(t: number): number {
+    // Early-phase asymptotic exponential near lower asymptote A
+    // E(t) = A + (K - A)·Q^(-1/ν)·e^(B·(t - T)/ν)
+    // This is the mathematically correct leading-order term as t → -∞
+    const amplitude = (this.K - this.A) * Math.pow(this.Q, -1 / this.nu);
+    const exponentialTerm = Math.exp((this.B * (t - this.T)) / this.nu);
+    return this.A + amplitude * exponentialTerm;
   }
 
   private calculateXAxisBounds(): { min: number; max: number } {
@@ -280,19 +295,25 @@ export class SigmoidChart implements AfterViewInit {
     }
   }
 
-  private generateGeneralizedLogisticData(): { x: number; y: number }[] {
+  private generateData(): {
+    sigmoid: { x: number; y: number }[];
+    exponential: { x: number; y: number }[];
+  } {
     const { min, max } = this.calculateXAxisBounds();
-    const data: { x: number; y: number }[] = [];
+    const sigmoid: { x: number; y: number }[] = [];
+    const exponential: { x: number; y: number }[] = [];
     const step = (max - min) / 200; // 200 points for smooth curve
 
     for (let t = min; t <= max; t += step) {
-      data.push({ x: t, y: this.generalizedLogistic(t) });
+      sigmoid.push({ x: t, y: this.generalizedLogistic(t) });
+      exponential.push({ x: t, y: this.earlyPhaseExponential(t) });
     }
-    return data;
+
+    return { sigmoid, exponential };
   }
 
   private createChart(): void {
-    const generalizedLogisticData = this.generateGeneralizedLogisticData();
+    const { sigmoid, exponential } = this.generateData();
 
     // Calculate Y-axis range based on asymptotes
     const { min, max } = this.calculateYAxisRange();
@@ -303,11 +324,22 @@ export class SigmoidChart implements AfterViewInit {
         datasets: [
           {
             label: 'Generalized Logistic Function',
-            data: generalizedLogisticData,
+            data: sigmoid,
             borderColor: 'rgb(75, 192, 192)',
             backgroundColor: 'rgba(75, 192, 192, 0.1)',
             tension: 0.4,
             pointRadius: 0,
+            borderWidth: 2,
+          },
+          {
+            label: 'Early-Phase Exponential',
+            data: exponential,
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+            tension: 0,
+            pointRadius: 0,
+            borderWidth: 2,
+            borderDash: [5, 5],
           },
         ],
       },
@@ -337,7 +369,7 @@ export class SigmoidChart implements AfterViewInit {
             text: 'Generalized Logistic Function',
           },
           legend: {
-            display: false,
+            display: true,
           },
         },
       },
