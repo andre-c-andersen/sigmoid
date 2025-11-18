@@ -5,6 +5,9 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:pages": "ng build --configuration production --base-href /",
+    "publish:docs": "shx rm -rf docs && shx mkdir -p docs && shx cp -r dist/sigmoid/browser/* docs/ && shx cp docs/index.html docs/404.html && echo sigmoid.tools > docs/CNAME",
+    "deploy": "npm run build:pages && npm run publish:docs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -45,6 +48,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "shx": "^0.4.0",
     "typescript": "~5.9.2"
   }
 }

@@ -1,6 +1,12 @@
 import { Routes } from '@angular/router';
-import { SigmoidPage } from './sigmoid-page/sigmoid-page';
+import { GeneralSigmoidPage } from './tools/general-sigmoid/general-sigmoid-page/general-sigmoid-page';
+import { GuestimateGrowthPage } from './tools/guestimate-growth/guestimate-growth-page';
+import { FitGrowthPage } from './tools/fit-growth/fit-growth-page';
 
 export const routes: Routes = [
-  { path: '', component: SigmoidPage },
+  { path: '', redirectTo: '/tools/general', pathMatch: 'full' },
+  { path: 'tools/general', component: GeneralSigmoidPage },
+  { path: 'tools/guestimate', component: GuestimateGrowthPage },
+  { path: 'tools/fit', component: FitGrowthPage },
+  { path: '**', redirectTo: '/tools/general' },
 ];

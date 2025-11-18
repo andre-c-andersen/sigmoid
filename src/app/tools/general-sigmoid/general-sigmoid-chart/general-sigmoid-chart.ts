@@ -5,12 +5,12 @@ import { Chart, registerables } from 'chart.js';
 Chart.register(...registerables);
 
 @Component({
-  selector: 'app-sigmoid-chart',
+  selector: 'app-general-sigmoid-chart',
   imports: [FormsModule],
-  templateUrl: './sigmoid-chart.html',
-  styleUrl: './sigmoid-chart.css',
+  templateUrl: './general-sigmoid-chart.html',
+  styleUrl: './general-sigmoid-chart.css',
 })
-export class SigmoidChart implements AfterViewInit {
+export class GeneralSigmoidChart implements AfterViewInit {
   @ViewChild('chartCanvas') chartCanvas!: ElementRef<HTMLCanvasElement>;
   private chart?: Chart;
 
