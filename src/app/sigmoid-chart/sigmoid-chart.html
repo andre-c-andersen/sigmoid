@@ -85,5 +85,19 @@
         />
       </label>
     </div>
+
+    <div class="control-group">
+      <label>
+        <span class="control-label">T (Horizontal shift - inflection point): {{ T }}</span>
+        <input
+          type="range"
+          [(ngModel)]="T"
+          (ngModelChange)="onParameterChange()"
+          min="-10"
+          max="10"
+          step="0.1"
+        />
+      </label>
+    </div>
   </div>
 </div>

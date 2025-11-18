@@ -31,6 +31,7 @@ export class SigmoidChart implements AfterViewInit {
   private _Q = 1;     // Position parameter
   private _C = 1;     // Typically 1
   private _nu = 1;    // Affects near which asymptote growth occurs
+  private _T = 0;     // Horizontal shift (inflection point position)
 
   // Getters and setters to ensure numeric types
   get A(): number { return this._A; }
@@ -50,6 +51,9 @@ export class SigmoidChart implements AfterViewInit {
 
   get nu(): number { return this._nu; }
   set nu(value: number | string) { this._nu = Number(value); }
+
+  get T(): number { return this._T; }
+  set T(value: number | string) { this._T = Number(value); }
 
   ngAfterViewInit(): void {
     this.createChart();
@@ -232,15 +236,56 @@ export class SigmoidChart implements AfterViewInit {
   }
 
   private generalizedLogistic(t: number): number {
-    // Y(t) = A + (K - A) / (C + Q·e^(-B·t))^(1/ν)
-    const exponential = Math.exp(-this.B * t);
+    // Y(t) = A + (K - A) / (C + Q·e^(-B·(t - T)))^(1/ν)
+    const exponential = Math.exp(-this.B * (t - this.T));
     const denominator = Math.pow(this.C + this.Q * exponential, 1 / this.nu);
     return this.A + (this.K - this.A) / denominator;
   }
 
+  private calculateXAxisBounds(): { min: number; max: number } {
+    // Solve for t where Y(t) = A + p*(K - A) for p = 0.01 and p = 0.99
+    // From: (C + Q·e^(-B·(t - T)))^(1/ν) = 1/p
+    // We get: t = T - ln(((1/p)^ν - C) / Q) / B
+
+    try {
+      const p01 = 0.01;
+      const p99 = 0.99;
+
+      const term01 = (Math.pow(1 / p01, this.nu) - this.C) / this.Q;
+      const term99 = (Math.pow(1 / p99, this.nu) - this.C) / this.Q;
+
+      // Check for valid logarithm arguments
+      if (term01 <= 0 || term99 <= 0 || this.B === 0) {
+        // Fall back to fixed range if parameters create invalid bounds
+        return { min: -10, max: 10 };
+      }
+
+      const t01 = this.T - Math.log(term01) / this.B;
+      const t99 = this.T - Math.log(term99) / this.B;
+
+      const tMin = Math.min(t01, t99);
+      const tMax = Math.max(t01, t99);
+
+      // Add some padding (10% on each side)
+      const range = tMax - tMin;
+      const padding = Math.max(range * 0.1, 1); // At least 1 unit of padding
+
+      return {
+        min: tMin - padding,
+        max: tMax + padding,
+      };
+    } catch (error) {
+      // Fallback to fixed range on any error
+      return { min: -10, max: 10 };
+    }
+  }
+
   private generateGeneralizedLogisticData(): { x: number; y: number }[] {
+    const { min, max } = this.calculateXAxisBounds();
     const data: { x: number; y: number }[] = [];
-    for (let t = -10; t <= 10; t += 0.1) {
+    const step = (max - min) / 200; // 200 points for smooth curve
+
+    for (let t = min; t <= max; t += step) {
       data.push({ x: t, y: this.generalizedLogistic(t) });
     }
     return data;
