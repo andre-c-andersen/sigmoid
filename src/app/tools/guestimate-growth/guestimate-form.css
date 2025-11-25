@@ -32,6 +32,7 @@
 .form-field {
   display: flex;
   flex-direction: column;
+  min-width: 0; /* Prevents overflow in grid */
 }
 
 .form-field label {
@@ -47,6 +48,9 @@
   border-radius: 4px;
   font-size: 1rem;
   transition: border-color 0.2s;
+  min-width: 0; /* Prevents overflow in grid */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-field input:focus {
@@ -133,4 +137,16 @@
   .result-row {
     grid-template-columns: 1fr;
   }
+}
+
+/* Handle narrow form container (e.g., in sidebar layout) */
+@container (max-width: 380px) {
+  .form-row,
+  .result-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-container {
+  container-type: inline-size;
 }

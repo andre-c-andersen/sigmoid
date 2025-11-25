@@ -15,9 +15,6 @@ export class GuestimateChart implements AfterViewInit {
   @ViewChild('chartCanvas') chartCanvas!: ElementRef<HTMLCanvasElement>;
   private chart?: Chart;
 
-  // Store the two input data points for display
-  private dataPoints: { t0: number; Y0: number; t1: number; Y1: number } | null = null;
-
   constructor(
     private dataService: SigmoidDataService,
     private parametersService: SigmoidParametersService
@@ -34,6 +31,13 @@ export class GuestimateChart implements AfterViewInit {
 
   ngAfterViewInit(): void {
     this.createChart();
+
+    // Render initial chart with current parameters (if available)
+    const params = this.parametersService.getParameters()();
+    const points = this.parametersService.getDataPoints()();
+    if (params && this.chart) {
+      this.updateChart(params, points);
+    }
   }
 
   private createChart(): void {
