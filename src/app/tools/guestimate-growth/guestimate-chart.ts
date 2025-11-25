@@ -1,10 +1,10 @@
 import { Component, ElementRef, ViewChild, AfterViewInit, effect } from '@angular/core';
-import { Chart, registerables, Filler } from 'chart.js';
+import { Chart, registerables } from 'chart.js';
 import 'chartjs-plugin-dragdata';
 import { SigmoidDataService } from '../../services/sigmoid-data.service';
 import { SigmoidParametersService } from '../../services/sigmoid-parameters.service';
 
-Chart.register(...registerables, Filler);
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-guestimate-chart',
@@ -53,19 +53,7 @@ export class GuestimateChart implements AfterViewInit {
       type: 'line' as const,
       data: {
         datasets: [
-          // Dataset 0: Shaded region between curves (rendered first, behind lines)
-          {
-            label: 'Scenario Range',
-            data: [],
-            borderColor: 'transparent',
-            backgroundColor: 'rgba(255, 159, 64, 0.15)',
-            tension: 0.4,
-            pointRadius: 0,
-            borderWidth: 0,
-            fill: true,
-            dragData: false,
-          },
-          // Dataset 1: Fitted Sigmoid (high scenario)
+          // Dataset 0: Fitted Sigmoid (high scenario)
           {
             label: 'High Scenario',
             data: [],
@@ -76,7 +64,7 @@ export class GuestimateChart implements AfterViewInit {
             borderWidth: 2,
             dragData: false,
           },
-          // Dataset 2: Fitted Sigmoid (low scenario)
+          // Dataset 1: Fitted Sigmoid (low scenario)
           {
             label: 'Low Scenario',
             data: [],
@@ -87,7 +75,7 @@ export class GuestimateChart implements AfterViewInit {
             borderWidth: 2,
             dragData: false,
           },
-          // Dataset 3: Early-Phase Exponential
+          // Dataset 2: Early-Phase Exponential
           {
             label: 'Early-Phase Exponential',
             data: [],
@@ -99,7 +87,7 @@ export class GuestimateChart implements AfterViewInit {
             borderDash: [5, 5],
             dragData: false,
           },
-          // Dataset 4: Input Data Points (DRAGGABLE)
+          // Dataset 3: Input Data Points (DRAGGABLE)
           {
             label: 'Input Data Points',
             data: [],
@@ -111,7 +99,7 @@ export class GuestimateChart implements AfterViewInit {
             showLine: false,
             dragData: true,
           },
-          // Dataset 5: Lower bound
+          // Dataset 4: Lower bound
           {
             label: 'Lower bound',
             data: [],
@@ -123,7 +111,7 @@ export class GuestimateChart implements AfterViewInit {
             borderDash: [3, 3],
             dragData: false,
           },
-          // Dataset 6: Upper bound (high)
+          // Dataset 5: Upper bound (high)
           {
             label: 'Upper bound (high)',
             data: [],
@@ -135,7 +123,7 @@ export class GuestimateChart implements AfterViewInit {
             borderDash: [3, 3],
             dragData: false,
           },
-          // Dataset 7: Upper bound (low) - for scenario mode
+          // Dataset 6: Upper bound (low) - for scenario mode
           {
             label: 'Upper bound (low)',
             data: [],
@@ -191,8 +179,8 @@ export class GuestimateChart implements AfterViewInit {
             round: 2,
             showTooltip: true,
             onDragStart: (e: MouseEvent | TouchEvent, datasetIndex: number, index: number, value: any) => {
-              // Only allow dragging dataset 4 (observations)
-              return datasetIndex === 4;
+              // Only allow dragging dataset 3 (observations)
+              return datasetIndex === 3;
             },
             onDrag: (e: MouseEvent | TouchEvent, datasetIndex: number, index: number, value: any) => {
               // Enforce Y bounds (between A and K/K2)
@@ -257,37 +245,24 @@ export class GuestimateChart implements AfterViewInit {
       sigmoidLow = lowResult.sigmoid;
     }
 
-    // Create shaded region (polygon) between the two curves
-    let shadedRegion: { x: number; y: number }[] = [];
-    if (scenario && sigmoid.length > 0 && sigmoidLow.length > 0) {
-      // Go along high curve left-to-right, then low curve right-to-left
-      shadedRegion = [
-        ...sigmoid,
-        ...[...sigmoidLow].reverse(),
-      ];
-    }
+    // Dataset 0: High scenario sigmoid
+    this.chart.data.datasets[0].data = sigmoid;
+    this.chart.data.datasets[0].label = scenario ? 'High Scenario' : 'Fitted Sigmoid';
 
-    // Dataset 0: Shaded region
-    this.chart.data.datasets[0].data = shadedRegion;
+    // Dataset 1: Low scenario sigmoid
+    this.chart.data.datasets[1].data = sigmoidLow;
 
-    // Dataset 1: High scenario sigmoid
-    this.chart.data.datasets[1].data = sigmoid;
-    this.chart.data.datasets[1].label = scenario ? 'High Scenario' : 'Fitted Sigmoid';
+    // Dataset 2: Early-Phase Exponential
+    this.chart.data.datasets[2].data = exponential;
 
-    // Dataset 2: Low scenario sigmoid
-    this.chart.data.datasets[2].data = sigmoidLow;
-
-    // Dataset 3: Early-Phase Exponential (only show for high scenario)
-    this.chart.data.datasets[3].data = exponential;
-
-    // Dataset 4: Input Data Points
+    // Dataset 3: Input Data Points
     if (points) {
-      this.chart.data.datasets[4].data = [
+      this.chart.data.datasets[3].data = [
         { x: points.t0, y: points.Y0 },
         { x: points.t1, y: points.Y1 },
       ];
     } else {
-      this.chart.data.datasets[4].data = [];
+      this.chart.data.datasets[3].data = [];
     }
 
     // Update bound lines
@@ -295,31 +270,31 @@ export class GuestimateChart implements AfterViewInit {
       const xMin = sigmoid[0].x;
       const xMax = sigmoid[sigmoid.length - 1].x;
 
-      // Dataset 5: Lower bound
-      this.chart.data.datasets[5].data = [
+      // Dataset 4: Lower bound
+      this.chart.data.datasets[4].data = [
         { x: xMin, y: params.A },
         { x: xMax, y: params.A },
       ];
 
-      // Dataset 6: Upper bound (high)
-      this.chart.data.datasets[6].data = [
+      // Dataset 5: Upper bound (high)
+      this.chart.data.datasets[5].data = [
         { x: xMin, y: params.K },
         { x: xMax, y: params.K },
       ];
-      this.chart.data.datasets[6].label = scenario ? 'Upper bound (high)' : 'Upper bound';
+      this.chart.data.datasets[5].label = scenario ? 'Upper bound (high)' : 'Upper bound';
       // Use gray color when not in scenario mode
-      (this.chart.data.datasets[6] as any).borderColor = scenario
+      (this.chart.data.datasets[5] as any).borderColor = scenario
         ? 'rgba(75, 192, 192, 0.5)'
         : 'rgba(150, 150, 150, 0.5)';
 
-      // Dataset 7: Upper bound (low) - only when scenario is enabled
+      // Dataset 6: Upper bound (low) - only when scenario is enabled
       if (scenario) {
-        this.chart.data.datasets[7].data = [
+        this.chart.data.datasets[6].data = [
           { x: xMin, y: scenario.K2 },
           { x: xMax, y: scenario.K2 },
         ];
       } else {
-        this.chart.data.datasets[7].data = [];
+        this.chart.data.datasets[6].data = [];
       }
     }
 
