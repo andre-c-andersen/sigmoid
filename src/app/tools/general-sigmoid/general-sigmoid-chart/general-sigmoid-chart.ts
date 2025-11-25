@@ -177,7 +177,7 @@ export class GeneralSigmoidChart implements AfterViewInit, OnDestroy {
       this.lastScaleChange = now;
       this.shrinkStableCountMin = 0;
       this.shrinkStableCountMax = 0;
-      return { min: this.currentYMin, max: this.currentYMax };
+      // Fall through to apply buffer below
     }
 
     // Check for expansion (immediate)
