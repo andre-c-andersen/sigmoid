@@ -6,7 +6,7 @@
 .main-content {
   flex: 1;
   padding: 2rem;
-  background: white;
+  background: var(--bg-primary);
   margin-left: 280px;
 }
 

@@ -23,7 +23,7 @@
   padding: 0;
   border: none;
   background: transparent;
-  color: #6c757d;
+  color: var(--text-muted);
   font-size: 1rem;
   cursor: pointer;
   opacity: 0;
@@ -36,36 +36,38 @@
 }
 
 .reset-icon-button:hover {
-  color: rgb(75, 192, 192);
-  background: rgba(75, 192, 192, 0.1);
+  color: var(--accent);
+  background: var(--accent-subtle);
 }
 
 .measure-label {
   font-size: 0.9rem;
   font-weight: 500;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .measure-value {
   width: 80px;
   padding: 0.25rem 0.5rem;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--border-input);
   border-radius: 4px;
   font-size: 0.9rem;
   text-align: right;
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .measure-value:focus {
   outline: none;
-  border-color: rgb(75, 192, 192);
-  box-shadow: 0 0 0 2px rgba(75, 192, 192, 0.1);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-subtle);
 }
 
 .measure-slider {
   width: 100%;
   height: 6px;
   border-radius: 3px;
-  background: #e0e0e0;
+  background: var(--slider-track);
   outline: none;
   -webkit-appearance: none;
 }
@@ -76,50 +78,50 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: rgb(75, 192, 192);
+  background: var(--accent);
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .measure-slider::-webkit-slider-thumb:hover {
-  background: rgb(55, 172, 172);
+  background: var(--accent-hover);
 }
 
 .measure-slider::-moz-range-thumb {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: rgb(75, 192, 192);
+  background: var(--accent);
   cursor: pointer;
   border: none;
   transition: background 0.2s;
 }
 
 .measure-slider::-moz-range-thumb:hover {
-  background: rgb(55, 172, 172);
+  background: var(--accent-hover);
 }
 
 .helper-text {
   font-size: 0.75rem;
-  color: #6c757d;
+  color: var(--text-muted);
 }
 
 .error-text {
   font-size: 0.75rem;
-  color: #dc3545;
+  color: var(--error);
 }
 
 .has-error .measure-value,
 .is-invalid .measure-value {
-  border-color: #dc3545;
+  border-color: var(--error);
 }
 
 .has-error .measure-slider::-webkit-slider-thumb,
 .is-invalid .measure-slider::-webkit-slider-thumb {
-  background: #dc3545;
+  background: var(--error);
 }
 
 .has-error .measure-slider::-moz-range-thumb,
 .is-invalid .measure-slider::-moz-range-thumb {
-  background: #dc3545;
+  background: var(--error);
 }

@@ -1,7 +1,64 @@
 /* You can add global styles to this file, and also import other style files */
 
+/* Reset default margins */
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-primary);
+}
+
+/* Theme CSS Variables */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #e9ecef;
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-muted: #6c757d;
+  --text-disabled: #adb5bd;
+  --border-color: #dee2e6;
+  --border-input: #ced4da;
+  --accent: rgb(75, 192, 192);
+  --accent-hover: rgb(55, 172, 172);
+  --accent-subtle: rgba(75, 192, 192, 0.1);
+  --error: #dc3545;
+  --error-bg: #f8d7da;
+  --error-border: #f5c6cb;
+  --error-text: #721c24;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --slider-track: #e0e0e0;
+  --btn-secondary: #6c757d;
+  --btn-secondary-hover: #5a6268;
+}
+
+:root.dark {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-tertiary: #0f3460;
+  --text-primary: #e8e8e8;
+  --text-secondary: #b8b8b8;
+  --text-muted: #888888;
+  --text-disabled: #555555;
+  --border-color: #2d3748;
+  --border-input: #4a5568;
+  --accent-subtle: rgba(75, 192, 192, 0.2);
+  --error: #f87171;
+  --error-bg: rgba(248, 113, 113, 0.2);
+  --error-border: rgba(248, 113, 113, 0.4);
+  --error-text: #fca5a5;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --slider-track: #3d3d5c;
+  --btn-secondary: #4a4a6a;
+  --btn-secondary-hover: #5a5a7a;
+}
+
 h1 {
   text-align: center;
+  color: var(--text-primary);
+}
+
+h2 {
+  color: var(--text-primary);
 }
 
 /* Standard tool page container */
@@ -14,18 +71,19 @@ h1 {
 .tool-page h2 {
   text-align: center;
   margin-bottom: 0.5rem;
+  color: var(--text-primary);
 }
 
 .tool-page .subtitle {
   text-align: center;
-  color: #6c757d;
+  color: var(--text-muted);
   margin-bottom: 2rem;
   font-size: 1.1rem;
 }
 
 /* Shared controls container styling */
 .controls-container {
-  background: #f8f9fa;
+  background: var(--bg-secondary);
   border-radius: 8px;
   padding: 1.5rem;
 }
@@ -44,7 +102,7 @@ h1 {
 }
 
 .form-section {
-  background: white;
+  background: var(--bg-primary);
   border-radius: 8px;
   padding: 1rem;
 }
@@ -52,7 +110,7 @@ h1 {
 .form-section h3 {
   margin: 0 0 1rem;
   font-size: 1rem;
-  color: #495057;
+  color: var(--text-secondary);
   font-weight: 600;
 }
 
@@ -76,10 +134,10 @@ h1 {
 
 /* Chart container card */
 .chart-container {
-  background: white;
+  background: var(--bg-primary);
   border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
   max-width: 900px;
   margin: 0 auto 2rem;
 }

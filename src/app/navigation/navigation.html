@@ -1,6 +1,29 @@
 <nav class="sidebar">
   <div class="nav-header">
     <h2>Tools</h2>
+    <div class="theme-toggle">
+      <button
+        class="theme-btn"
+        [class.active]="themeService.currentPreference() === 'system'"
+        (click)="setTheme('system')"
+        title="System preference">
+        Auto
+      </button>
+      <button
+        class="theme-btn"
+        [class.active]="themeService.currentPreference() === 'light'"
+        (click)="setTheme('light')"
+        title="Light mode">
+        Light
+      </button>
+      <button
+        class="theme-btn"
+        [class.active]="themeService.currentPreference() === 'dark'"
+        (click)="setTheme('dark')"
+        title="Dark mode">
+        Dark
+      </button>
+    </div>
   </div>
 
   <a

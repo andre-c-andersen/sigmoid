@@ -1,8 +1,9 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Chart, registerables } from 'chart.js';
 import { MeasureInput } from '../../../shared/measure-input';
+import { ThemeService, ChartColorPalette } from '../../../services/theme.service';
 
 Chart.register(...registerables);
 
@@ -40,8 +41,17 @@ export class GeneralSigmoidChart implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router
-  ) {}
+    private router: Router,
+    private themeService: ThemeService
+  ) {
+    // Watch for theme changes
+    effect(() => {
+      const colors = this.themeService.chartColors();
+      if (this.chart) {
+        this.updateChartColors(colors);
+      }
+    });
+  }
 
   // Getters and setters to ensure numeric types
   get A(): number { return this._A; }
@@ -402,6 +412,7 @@ export class GeneralSigmoidChart implements OnInit, AfterViewInit, OnDestroy {
 
     // Calculate Y-axis range based on asymptotes
     const { min, max } = this.calculateYAxisRange();
+    const colors = this.themeService.chartColors();
 
     this.chart = new Chart(this.chartCanvas.nativeElement, {
       type: 'line' as const,
@@ -410,8 +421,8 @@ export class GeneralSigmoidChart implements OnInit, AfterViewInit, OnDestroy {
           {
             label: 'Generalized Logistic Function',
             data: sigmoid,
-            borderColor: 'rgb(75, 192, 192)',
-            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+            borderColor: colors.primary.border,
+            backgroundColor: colors.primary.background,
             tension: 0.4,
             pointRadius: 0,
             borderWidth: 2,
@@ -419,8 +430,8 @@ export class GeneralSigmoidChart implements OnInit, AfterViewInit, OnDestroy {
           {
             label: 'Fitted Exponential',
             data: exponential,
-            borderColor: 'rgb(255, 99, 132)',
-            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+            borderColor: colors.exponential.border,
+            backgroundColor: colors.exponential.background,
             tension: 0,
             pointRadius: 0,
             borderWidth: 2,
@@ -429,7 +440,7 @@ export class GeneralSigmoidChart implements OnInit, AfterViewInit, OnDestroy {
           {
             label: 'Lower bound',
             data: lowerBound,
-            borderColor: 'rgba(150, 150, 150, 0.5)',
+            borderColor: colors.bounds,
             backgroundColor: 'transparent',
             tension: 0,
             pointRadius: 0,
@@ -439,7 +450,7 @@ export class GeneralSigmoidChart implements OnInit, AfterViewInit, OnDestroy {
           {
             label: 'Upper bound',
             data: upperBound,
-            borderColor: 'rgba(150, 150, 150, 0.5)',
+            borderColor: colors.bounds,
             backgroundColor: 'transparent',
             tension: 0,
             pointRadius: 0,
@@ -457,12 +468,26 @@ export class GeneralSigmoidChart implements OnInit, AfterViewInit, OnDestroy {
             title: {
               display: true,
               text: 'Time',
+              color: colors.text,
+            },
+            grid: {
+              color: colors.grid,
+            },
+            ticks: {
+              color: colors.text,
             },
           },
           y: {
             title: {
               display: true,
               text: 'Value',
+              color: colors.text,
+            },
+            grid: {
+              color: colors.grid,
+            },
+            ticks: {
+              color: colors.text,
             },
             min: min,
             max: max,
@@ -472,12 +497,60 @@ export class GeneralSigmoidChart implements OnInit, AfterViewInit, OnDestroy {
           title: {
             display: true,
             text: 'Generalized Logistic Function',
+            color: colors.text,
           },
           legend: {
             display: true,
+            labels: {
+              color: colors.text,
+            },
           },
         },
       },
     });
+  }
+
+  private updateChartColors(colors: ChartColorPalette): void {
+    if (!this.chart) return;
+
+    const datasets = this.chart.data.datasets;
+
+    // Dataset 0: Sigmoid
+    datasets[0].borderColor = colors.primary.border;
+    datasets[0].backgroundColor = colors.primary.background;
+
+    // Dataset 1: Exponential
+    datasets[1].borderColor = colors.exponential.border;
+    datasets[1].backgroundColor = colors.exponential.background;
+
+    // Dataset 2: Lower bound
+    datasets[2].borderColor = colors.bounds;
+
+    // Dataset 3: Upper bound
+    datasets[3].borderColor = colors.bounds;
+
+    // Update scales
+    const scales = this.chart.options.scales as any;
+    if (scales.x) {
+      scales.x.grid = { color: colors.grid };
+      scales.x.ticks = { ...scales.x.ticks, color: colors.text };
+      if (scales.x.title) scales.x.title.color = colors.text;
+    }
+    if (scales.y) {
+      scales.y.grid = { color: colors.grid };
+      scales.y.ticks = { ...scales.y.ticks, color: colors.text };
+      if (scales.y.title) scales.y.title.color = colors.text;
+    }
+
+    // Update plugins
+    const plugins = this.chart.options.plugins as any;
+    if (plugins.legend?.labels) {
+      plugins.legend.labels.color = colors.text;
+    }
+    if (plugins.title) {
+      plugins.title.color = colors.text;
+    }
+
+    this.chart.update();
   }
 }

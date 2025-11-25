@@ -1,6 +1,6 @@
 /* Results section */
 .results-section {
-  background: white;
+  background: var(--bg-primary);
   padding: 1rem;
   border-radius: 8px;
 }
@@ -8,7 +8,7 @@
 .results-section h3 {
   margin: 0 0 1rem;
   font-size: 1rem;
-  color: #495057;
+  color: var(--text-secondary);
   font-weight: 600;
 }
 
@@ -16,7 +16,7 @@
   display: flex;
   flex-direction: column;
   padding: 0.75rem;
-  background: #f8f9fa;
+  background: var(--bg-secondary);
   border-radius: 4px;
   margin-bottom: 0.5rem;
 }
@@ -27,30 +27,30 @@
 
 .result-label {
   font-size: 0.75rem;
-  color: #6c757d;
+  color: var(--text-muted);
   margin-bottom: 0.25rem;
   font-weight: 500;
 }
 
 .result-value {
   font-size: 1.25rem;
-  color: rgb(75, 192, 192);
+  color: var(--accent);
   font-weight: 600;
 }
 
 .error-message {
   padding: 0.75rem;
-  background: #f8d7da;
-  border: 1px solid #f5c6cb;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
   border-radius: 4px;
-  color: #721c24;
+  color: var(--error-text);
   font-size: 0.875rem;
 }
 
 .reset-button {
   width: 100%;
   padding: 0.75rem;
-  background: #6c757d;
+  background: var(--btn-secondary);
   color: white;
   border: none;
   border-radius: 4px;
@@ -62,7 +62,7 @@
 }
 
 .reset-button:hover {
-  background: #5a6268;
+  background: var(--btn-secondary-hover);
 }
 
 /* Scenario toggle */
@@ -76,14 +76,20 @@
   gap: 0.5rem;
   cursor: pointer;
   font-size: 0.9rem;
-  color: #495057;
+  color: var(--text-secondary);
 }
 
 .checkbox-label input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: rgb(75, 192, 192);
+  accent-color: var(--accent);
   cursor: pointer;
+}
+
+/* Dark mode checkbox enhancement */
+:root.dark .checkbox-label input[type="checkbox"] {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-input);
 }
 
 /* Scenario results */
@@ -102,7 +108,7 @@
 .scenario-label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #495057;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -112,7 +118,7 @@
 }
 
 .high-group .scenario-label {
-  color: rgb(75, 192, 192);
+  color: var(--accent);
 }
 
 .low-group .scenario-label {
@@ -133,7 +139,7 @@
 .interval-label {
   font-size: 0.9rem;
   font-weight: 500;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .interval-controls {
@@ -145,37 +151,51 @@
 .interval-input {
   width: 100px;
   padding: 0.4rem 0.5rem;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--border-input);
   border-radius: 4px;
   font-size: 0.9rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .interval-input:focus {
   outline: none;
-  border-color: rgb(75, 192, 192);
-  box-shadow: 0 0 0 2px rgba(75, 192, 192, 0.1);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-subtle);
+}
+
+/* Hide number spinners */
+.interval-input::-webkit-outer-spin-button,
+.interval-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.interval-input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .interval-input::placeholder {
-  color: #adb5bd;
+  color: var(--text-disabled);
 }
 
 .auto-button {
   padding: 0.4rem 0.75rem;
-  background: #e9ecef;
-  border: 1px solid #ced4da;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-input);
   border-radius: 4px;
   font-size: 0.85rem;
-  color: #495057;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .auto-button:hover {
-  background: #dee2e6;
+  background: var(--border-color);
 }
 
 .helper-text {
   font-size: 0.75rem;
-  color: #6c757d;
+  color: var(--text-muted);
 }

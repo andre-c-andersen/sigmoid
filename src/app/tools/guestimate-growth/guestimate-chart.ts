@@ -3,6 +3,7 @@ import { Chart, registerables } from 'chart.js';
 import 'chartjs-plugin-dragdata';
 import { SigmoidDataService } from '../../services/sigmoid-data.service';
 import { SigmoidParametersService } from '../../services/sigmoid-parameters.service';
+import { ThemeService, ChartColorPalette } from '../../services/theme.service';
 
 Chart.register(...registerables);
 
@@ -19,7 +20,8 @@ export class GuestimateChart implements AfterViewInit, OnDestroy {
 
   constructor(
     private dataService: SigmoidDataService,
-    private parametersService: SigmoidParametersService
+    private parametersService: SigmoidParametersService,
+    private themeService: ThemeService
   ) {
     // Watch for parameter changes
     effect(() => {
@@ -29,6 +31,14 @@ export class GuestimateChart implements AfterViewInit, OnDestroy {
       const xAxisTickInterval = this.parametersService.getXAxisTickInterval()();
       if (params && this.chart) {
         this.updateChart(params, points, scenario, xAxisTickInterval);
+      }
+    });
+
+    // Watch for theme changes
+    effect(() => {
+      const colors = this.themeService.chartColors();
+      if (this.chart) {
+        this.updateChartColors(colors);
       }
     });
   }
@@ -64,6 +74,8 @@ export class GuestimateChart implements AfterViewInit, OnDestroy {
     const ctx = this.chartCanvas.nativeElement.getContext('2d');
     if (!ctx) return;
 
+    const colors = this.themeService.chartColors();
+
     this.chart = new Chart(ctx, {
       type: 'line' as const,
       data: {
@@ -72,8 +84,8 @@ export class GuestimateChart implements AfterViewInit, OnDestroy {
           {
             label: 'High Scenario',
             data: [],
-            borderColor: 'rgb(75, 192, 192)',
-            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+            borderColor: colors.primary.border,
+            backgroundColor: colors.primary.background,
             tension: 0.4,
             pointRadius: 0,
             borderWidth: 2,
@@ -83,8 +95,8 @@ export class GuestimateChart implements AfterViewInit, OnDestroy {
           {
             label: 'Low Scenario',
             data: [],
-            borderColor: 'rgb(255, 159, 64)',
-            backgroundColor: 'rgba(255, 159, 64, 0.1)',
+            borderColor: colors.low.border,
+            backgroundColor: colors.low.background,
             tension: 0.4,
             pointRadius: 0,
             borderWidth: 2,
@@ -94,8 +106,8 @@ export class GuestimateChart implements AfterViewInit, OnDestroy {
           {
             label: 'Fitted Exponential',
             data: [],
-            borderColor: 'rgb(255, 99, 132)',
-            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+            borderColor: colors.exponential.border,
+            backgroundColor: colors.exponential.background,
             tension: 0,
             pointRadius: 0,
             borderWidth: 2,
@@ -106,8 +118,8 @@ export class GuestimateChart implements AfterViewInit, OnDestroy {
           {
             label: 'Input Data Points',
             data: [],
-            borderColor: 'rgb(100, 100, 100)',
-            backgroundColor: 'rgb(100, 100, 100)',
+            borderColor: colors.dataPoints,
+            backgroundColor: colors.dataPoints,
             pointRadius: 8,
             pointHoverRadius: 10,
             pointHitRadius: 25,
@@ -118,7 +130,7 @@ export class GuestimateChart implements AfterViewInit, OnDestroy {
           {
             label: 'Lower bound',
             data: [],
-            borderColor: 'rgba(150, 150, 150, 0.5)',
+            borderColor: colors.bounds,
             backgroundColor: 'transparent',
             tension: 0,
             pointRadius: 0,
@@ -130,7 +142,7 @@ export class GuestimateChart implements AfterViewInit, OnDestroy {
           {
             label: 'Upper bound (high)',
             data: [],
-            borderColor: 'rgba(75, 192, 192, 0.5)',
+            borderColor: colors.boundsHigh,
             backgroundColor: 'transparent',
             tension: 0,
             pointRadius: 0,
@@ -142,7 +154,7 @@ export class GuestimateChart implements AfterViewInit, OnDestroy {
           {
             label: 'Upper bound (low)',
             data: [],
-            borderColor: 'rgba(255, 159, 64, 0.5)',
+            borderColor: colors.boundsLow,
             backgroundColor: 'transparent',
             tension: 0,
             pointRadius: 0,
@@ -161,12 +173,26 @@ export class GuestimateChart implements AfterViewInit, OnDestroy {
             title: {
               display: true,
               text: 'Time',
+              color: colors.text,
+            },
+            grid: {
+              color: colors.grid,
+            },
+            ticks: {
+              color: colors.text,
             },
           },
           y: {
             title: {
               display: true,
               text: 'Value',
+              color: colors.text,
+            },
+            grid: {
+              color: colors.grid,
+            },
+            ticks: {
+              color: colors.text,
             },
           },
         },
@@ -174,10 +200,12 @@ export class GuestimateChart implements AfterViewInit, OnDestroy {
           title: {
             display: true,
             text: 'Fitted Sigmoid from Two Data Points',
+            color: colors.text,
           },
           legend: {
             display: true,
             labels: {
+              color: colors.text,
               filter: (item: any, chartData: any) => {
                 // Hide legend items with empty data
                 const datasetIndex = item.datasetIndex;
@@ -217,6 +245,61 @@ export class GuestimateChart implements AfterViewInit, OnDestroy {
         },
       },
     });
+  }
+
+  private updateChartColors(colors: ChartColorPalette): void {
+    if (!this.chart) return;
+
+    const datasets = this.chart.data.datasets;
+
+    // Dataset 0: High scenario
+    datasets[0].borderColor = colors.primary.border;
+    datasets[0].backgroundColor = colors.primary.background;
+
+    // Dataset 1: Low scenario
+    datasets[1].borderColor = colors.low.border;
+    datasets[1].backgroundColor = colors.low.background;
+
+    // Dataset 2: Exponential
+    datasets[2].borderColor = colors.exponential.border;
+    datasets[2].backgroundColor = colors.exponential.background;
+
+    // Dataset 3: Data points
+    datasets[3].borderColor = colors.dataPoints;
+    datasets[3].backgroundColor = colors.dataPoints;
+
+    // Dataset 4: Lower bound
+    datasets[4].borderColor = colors.bounds;
+
+    // Dataset 5: Upper bound (high)
+    datasets[5].borderColor = colors.boundsHigh;
+
+    // Dataset 6: Upper bound (low)
+    datasets[6].borderColor = colors.boundsLow;
+
+    // Update scales
+    const scales = this.chart.options.scales as any;
+    if (scales.x) {
+      scales.x.grid = { color: colors.grid };
+      scales.x.ticks = { ...scales.x.ticks, color: colors.text };
+      if (scales.x.title) scales.x.title.color = colors.text;
+    }
+    if (scales.y) {
+      scales.y.grid = { color: colors.grid };
+      scales.y.ticks = { ...scales.y.ticks, color: colors.text };
+      if (scales.y.title) scales.y.title.color = colors.text;
+    }
+
+    // Update plugins
+    const plugins = this.chart.options.plugins as any;
+    if (plugins.legend?.labels) {
+      plugins.legend.labels.color = colors.text;
+    }
+    if (plugins.title) {
+      plugins.title.color = colors.text;
+    }
+
+    this.chart.update();
   }
 
   private updateChart(params: any, points: any, scenario: any, xAxisTickInterval: number | null): void {
@@ -299,9 +382,10 @@ export class GuestimateChart implements AfterViewInit, OnDestroy {
       ];
       this.chart.data.datasets[5].label = scenario ? 'Upper bound (high)' : 'Upper bound';
       // Use gray color when not in scenario mode
+      const colors = this.themeService.chartColors();
       (this.chart.data.datasets[5] as any).borderColor = scenario
-        ? 'rgba(75, 192, 192, 0.5)'
-        : 'rgba(150, 150, 150, 0.5)';
+        ? colors.boundsHigh
+        : colors.bounds;
 
       // Dataset 6: Upper bound (low) - only when scenario is enabled
       if (scenario) {
