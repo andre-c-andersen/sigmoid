@@ -21,8 +21,8 @@
       "env": {
         "PATH": "/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin:~/.local/bin",
         "OPENAI_API_KEY": "${OPENAI_API_KEY}",
-        "DEFAULT_MODEL": "gpt-5.1",
-        "OPENAI_ALLOWED_MODELS": "gpt-5.1"
+        "DEFAULT_MODEL": "gpt-5",
+        "OPENAI_ALLOWED_MODELS": "gpt-5"
       }
     }
   }
