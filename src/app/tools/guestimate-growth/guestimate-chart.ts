@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, effect } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, effect } from '@angular/core';
 import { Chart, registerables } from 'chart.js';
 import 'chartjs-plugin-dragdata';
 import { SigmoidDataService } from '../../services/sigmoid-data.service';
@@ -12,9 +12,10 @@ Chart.register(...registerables);
   templateUrl: './guestimate-chart.html',
   styleUrl: './guestimate-chart.css',
 })
-export class GuestimateChart implements AfterViewInit {
+export class GuestimateChart implements AfterViewInit, OnDestroy {
   @ViewChild('chartCanvas') chartCanvas!: ElementRef<HTMLCanvasElement>;
   private chart?: Chart<'line'>;
+  private resizeObserver?: ResizeObserver;
 
   constructor(
     private dataService: SigmoidDataService,
@@ -43,6 +44,20 @@ export class GuestimateChart implements AfterViewInit {
     if (params && this.chart) {
       this.updateChart(params, points, scenario, xAxisTickInterval);
     }
+
+    // Watch for container resize to fix Chart.js resize issues
+    const container = this.chartCanvas.nativeElement.parentElement;
+    if (container) {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.chart?.resize();
+      });
+      this.resizeObserver.observe(container);
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.resizeObserver?.disconnect();
+    this.chart?.destroy();
   }
 
   private createChart(): void {
@@ -75,9 +90,9 @@ export class GuestimateChart implements AfterViewInit {
             borderWidth: 2,
             dragData: false,
           },
-          // Dataset 2: Early-Phase Exponential
+          // Dataset 2: Fitted Exponential
           {
-            label: 'Early-Phase Exponential',
+            label: 'Fitted Exponential',
             data: [],
             borderColor: 'rgb(255, 99, 132)',
             backgroundColor: 'rgba(255, 99, 132, 0.1)',
@@ -253,7 +268,7 @@ export class GuestimateChart implements AfterViewInit {
     // Dataset 1: Low scenario sigmoid
     this.chart.data.datasets[1].data = sigmoidLow;
 
-    // Dataset 2: Early-Phase Exponential
+    // Dataset 2: Fitted Exponential
     this.chart.data.datasets[2].data = exponential;
 
     // Dataset 3: Input Data Points

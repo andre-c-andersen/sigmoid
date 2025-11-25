@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Chart, registerables } from 'chart.js';
 import { MeasureInput } from '../../../shared/measure-input';
@@ -11,9 +11,10 @@ Chart.register(...registerables);
   templateUrl: './general-sigmoid-chart.html',
   styleUrl: './general-sigmoid-chart.css',
 })
-export class GeneralSigmoidChart implements AfterViewInit {
+export class GeneralSigmoidChart implements AfterViewInit, OnDestroy {
   @ViewChild('chartCanvas') chartCanvas!: ElementRef<HTMLCanvasElement>;
   private chart?: Chart<'line'>;
+  private resizeObserver?: ResizeObserver;
 
   // Y-axis scaling configuration (now using 1-2-5 sequence)
   private readonly SHRINK_GRACE_MS = 200;       // Delay before considering shrink
@@ -57,6 +58,20 @@ export class GeneralSigmoidChart implements AfterViewInit {
 
   ngAfterViewInit(): void {
     this.createChart();
+
+    // Watch for container resize to fix Chart.js resize issues
+    const container = this.chartCanvas.nativeElement.parentElement;
+    if (container) {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.chart?.resize();
+      });
+      this.resizeObserver.observe(container);
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.resizeObserver?.disconnect();
+    this.chart?.destroy();
   }
 
   protected onParameterChange(): void {
@@ -351,7 +366,7 @@ export class GeneralSigmoidChart implements AfterViewInit {
             borderWidth: 2,
           },
           {
-            label: 'Early-Phase Exponential',
+            label: 'Fitted Exponential',
             data: exponential,
             borderColor: 'rgb(255, 99, 132)',
             backgroundColor: 'rgba(255, 99, 132, 0.1)',
