@@ -97,9 +97,9 @@ export class GuestimateForm implements OnInit {
     const scenarioEnabled = this.enableScenario();
 
     // Update dynamic slider bounds for observation values
-    // When scenario is enabled, observations must be within the more restrictive bound
+    // Observations must fit within the full range (A to K), regardless of scenario mode
     const minBound = Math.min(values.A, values.K);
-    const maxBound = scenarioEnabled ? Math.min(values.K, K2) : Math.max(values.A, values.K);
+    const maxBound = Math.max(values.A, values.K);
     this.valueSliderMin.set(minBound);
     this.valueSliderMax.set(maxBound);
 
@@ -193,6 +193,11 @@ export class GuestimateForm implements OnInit {
   }
 
   protected onScenarioToggle(): void {
+    // When enabling scenario, default K2 to 80% of K
+    if (this.enableScenario()) {
+      const K = this.form.get('K')?.value ?? 1;
+      this.K2.set(K * 0.8);
+    }
     this.calculate();
   }
 

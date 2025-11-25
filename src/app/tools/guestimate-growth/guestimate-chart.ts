@@ -183,13 +183,12 @@ export class GuestimateChart implements AfterViewInit {
               return datasetIndex === 3;
             },
             onDrag: (e: MouseEvent | TouchEvent, datasetIndex: number, index: number, value: any) => {
-              // Enforce Y bounds (between A and K/K2)
+              // Enforce Y bounds (between A and K)
               const params = this.parametersService.getParameters()();
-              const scenario = this.parametersService.getScenarioParameters()();
               if (!params) return false;
 
-              const minBound = params.A;
-              const maxBound = scenario ? Math.min(params.K, scenario.K2) : params.K;
+              const minBound = Math.min(params.A, params.K);
+              const maxBound = Math.max(params.A, params.K);
 
               if (value.y <= minBound || value.y >= maxBound) {
                 return false;
