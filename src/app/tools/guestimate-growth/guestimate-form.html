@@ -140,6 +140,15 @@
         @if (enableScenario()) {
           <div class="scenario-results">
             <div class="scenario-group">
+              <span class="scenario-label">Exponential fit</span>
+              <div class="result-row">
+                <div class="result-item">
+                  <span class="result-label">Growth rate</span>
+                  <span class="result-value">{{ exponentialRate() !== null ? (exponentialRate()! | number: '1.4-4') : '-' }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="scenario-group">
               <span class="scenario-label">High scenario</span>
               <div class="result-row">
                 <div class="result-item">
@@ -169,12 +178,18 @@
         } @else {
           <div class="result-row">
             <div class="result-item">
-              <span class="result-label">Growth rate</span>
-              <span class="result-value">{{ calculatedB() !== null ? (calculatedB()! | number: '1.4-4') : '-' }}</span>
+              <span class="result-label">Exponential growth rate</span>
+              <span class="result-value">{{ exponentialRate() !== null ? (exponentialRate()! | number: '1.4-4') : '-' }}</span>
             </div>
 
             <div class="result-item">
-              <span class="result-label">Midpoint (when)</span>
+              <span class="result-label">Sigmoid growth rate</span>
+              <span class="result-value">{{ calculatedB() !== null ? (calculatedB()! | number: '1.4-4') : '-' }}</span>
+            </div>
+          </div>
+          <div class="result-row">
+            <div class="result-item">
+              <span class="result-label">Time midpoint</span>
               <span class="result-value">{{ calculatedT() !== null ? (calculatedT()! | number: '1.4-4') : '-' }}</span>
             </div>
           </div>

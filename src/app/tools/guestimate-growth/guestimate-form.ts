@@ -16,6 +16,7 @@ export class GuestimateForm implements OnInit {
   protected form!: FormGroup;
   protected calculatedB = signal<number | null>(null);
   protected calculatedT = signal<number | null>(null);
+  protected exponentialRate = signal<number | null>(null);
   protected error = signal<string | null>(null);
 
   // Scenario mode (second upper bound)
@@ -149,6 +150,14 @@ export class GuestimateForm implements OnInit {
       this.calculatedT.set(result.T);
       this.error.set(null);
 
+      // Calculate exponential growth rate: b = ln(Y1/Y0) / (t1 - t0)
+      if (values.Y0 > 0 && values.Y1 > 0 && values.t1 !== values.t0) {
+        const expRate = Math.log(values.Y1 / values.Y0) / (values.t1 - values.t0);
+        this.exponentialRate.set(expRate);
+      } else {
+        this.exponentialRate.set(null);
+      }
+
       // Update parameters service for the chart
       this.parametersService.setParameters({
         A: values.A,
@@ -183,6 +192,7 @@ export class GuestimateForm implements OnInit {
     } else {
       this.calculatedB.set(null);
       this.calculatedT.set(null);
+      this.exponentialRate.set(null);
       this.calculatedB2.set(null);
       this.calculatedT2.set(null);
       this.error.set(result.error || 'Calculation failed');
