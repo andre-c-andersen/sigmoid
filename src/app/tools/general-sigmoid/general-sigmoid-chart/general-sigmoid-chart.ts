@@ -1,12 +1,13 @@
 import { Component, OnInit, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Chart, registerables } from 'chart.js';
+import { MeasureInput } from '../../../shared/measure-input';
 
 Chart.register(...registerables);
 
 @Component({
   selector: 'app-general-sigmoid-chart',
-  imports: [FormsModule],
+  imports: [FormsModule, MeasureInput],
   templateUrl: './general-sigmoid-chart.html',
   styleUrl: './general-sigmoid-chart.css',
 })
@@ -221,15 +222,21 @@ export class GeneralSigmoidChart implements AfterViewInit {
       this.shrinkStableCountMax = 0;
     }
 
-    return { min: this.currentYMin, max: this.currentYMax };
+    // Add 10% buffer relative to the data range AFTER calculating nice bounds
+    const dataRange = Math.abs(dataMax - dataMin);
+    const buffer = dataRange * 0.1;
+
+    return { min: this.currentYMin - buffer, max: this.currentYMax + buffer };
   }
 
   private updateChart(): void {
     if (!this.chart) return;
 
-    const { sigmoid, exponential } = this.generateData();
+    const { sigmoid, exponential, lowerBound, upperBound } = this.generateData();
     this.chart.data.datasets[0].data = sigmoid;
     this.chart.data.datasets[1].data = exponential;
+    this.chart.data.datasets[2].data = lowerBound;
+    this.chart.data.datasets[3].data = upperBound;
 
     // Update Y-axis scale based on asymptotes
     const { min, max } = this.calculateYAxisRange();
@@ -298,6 +305,8 @@ export class GeneralSigmoidChart implements AfterViewInit {
   private generateData(): {
     sigmoid: { x: number; y: number }[];
     exponential: { x: number; y: number }[];
+    lowerBound: { x: number; y: number }[];
+    upperBound: { x: number; y: number }[];
   } {
     const { min, max } = this.calculateXAxisBounds();
     const sigmoid: { x: number; y: number }[] = [];
@@ -309,11 +318,21 @@ export class GeneralSigmoidChart implements AfterViewInit {
       exponential.push({ x: t, y: this.earlyPhaseExponential(t) });
     }
 
-    return { sigmoid, exponential };
+    // Horizontal bound lines (just need start and end points)
+    const lowerBound = [
+      { x: min, y: this.A },
+      { x: max, y: this.A },
+    ];
+    const upperBound = [
+      { x: min, y: this.K },
+      { x: max, y: this.K },
+    ];
+
+    return { sigmoid, exponential, lowerBound, upperBound };
   }
 
   private createChart(): void {
-    const { sigmoid, exponential } = this.generateData();
+    const { sigmoid, exponential, lowerBound, upperBound } = this.generateData();
 
     // Calculate Y-axis range based on asymptotes
     const { min, max } = this.calculateYAxisRange();
@@ -340,6 +359,26 @@ export class GeneralSigmoidChart implements AfterViewInit {
             pointRadius: 0,
             borderWidth: 2,
             borderDash: [5, 5],
+          },
+          {
+            label: 'Lower bound',
+            data: lowerBound,
+            borderColor: 'rgba(150, 150, 150, 0.5)',
+            backgroundColor: 'transparent',
+            tension: 0,
+            pointRadius: 0,
+            borderWidth: 1,
+            borderDash: [3, 3],
+          },
+          {
+            label: 'Upper bound',
+            data: upperBound,
+            borderColor: 'rgba(150, 150, 150, 0.5)',
+            backgroundColor: 'transparent',
+            tension: 0,
+            pointRadius: 0,
+            borderWidth: 1,
+            borderDash: [3, 3],
           },
         ],
       },

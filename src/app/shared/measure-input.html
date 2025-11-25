@@ -1,0 +1,43 @@
+<div class="measure-input" [class.has-error]="hasError" [class.is-invalid]="invalid">
+  <div class="measure-header">
+    <label class="measure-label">{{ label }}</label>
+    <div class="measure-controls">
+      <input
+        type="text"
+        class="measure-value"
+        [(ngModel)]="inputValue"
+        (ngModelChange)="onInputChange()"
+        (blur)="onInputBlur()"
+      />
+      <button
+        type="button"
+        class="reset-icon-button"
+        [class.visible]="canReset"
+        (click)="resetToDefault()"
+        title="Reset to default"
+      >↺</button>
+    </div>
+  </div>
+
+  <input
+    type="range"
+    class="measure-slider"
+    [min]="sliderMin"
+    [max]="sliderMax"
+    [step]="step"
+    [value]="clampedSliderValue"
+    (input)="onSliderChange($event)"
+  />
+
+  @if (helperText && !hasError && !invalid) {
+    <small class="helper-text">{{ helperText }}</small>
+  }
+
+  @if (hasError) {
+    <small class="error-text">{{ errorMessage }}</small>
+  }
+
+  @if (invalid && invalidMessage && !hasError) {
+    <small class="error-text">{{ invalidMessage }}</small>
+  }
+</div>

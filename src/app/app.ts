@@ -9,5 +9,5 @@ import { Navigation } from './navigation/navigation';
   styleUrl: './app.css'
 })
 export class App {
-  protected readonly title = signal('sigmoid');
+  protected readonly title = signal('Sigmoid Tools');
 }

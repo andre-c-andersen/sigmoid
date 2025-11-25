@@ -1,76 +1,184 @@
 <div class="form-container">
   <form [formGroup]="form">
     <div class="form-section">
-      <h3>Observed Data Points</h3>
+      <h3>Your Observations</h3>
 
       <div class="form-row">
-        <div class="form-field">
-          <label for="t0">t₀ (First time point)</label>
-          <input type="number" id="t0" formControlName="t0" step="0.1">
-        </div>
-
-        <div class="form-field">
-          <label for="Y0">Y(t₀) - Value at t₀</label>
-          <input type="number" id="Y0" formControlName="Y0" step="0.01">
-        </div>
+        <app-measure-input
+          label="First observation time"
+          formControlName="t0"
+          [sliderMin]="-10"
+          [sliderMax]="50"
+          [step]="0.1"
+        />
+        <app-measure-input
+          label="First observation value"
+          formControlName="Y0"
+          [sliderMin]="valueSliderMin()"
+          [sliderMax]="valueSliderMax()"
+          [step]="0.01"
+          [invalid]="y0Invalid()"
+          [invalidMessage]="boundsInvalidMessage"
+        />
       </div>
 
       <div class="form-row">
-        <div class="form-field">
-          <label for="t1">t₁ (Second time point)</label>
-          <input type="number" id="t1" formControlName="t1" step="0.1">
-        </div>
-
-        <div class="form-field">
-          <label for="Y1">Y(t₁) - Value at t₁</label>
-          <input type="number" id="Y1" formControlName="Y1" step="0.01">
-        </div>
-      </div>
-    </div>
-
-    <div class="form-section">
-      <h3>Sigmoid Bounds</h3>
-
-      <div class="form-row">
-        <div class="form-field">
-          <label for="A">A (Lower asymptote)</label>
-          <input type="number" id="A" formControlName="A" step="0.1">
-        </div>
-
-        <div class="form-field">
-          <label for="K">K (Upper asymptote)</label>
-          <input type="number" id="K" formControlName="K" step="0.1">
-        </div>
+        <app-measure-input
+          label="Second observation time"
+          formControlName="t1"
+          [sliderMin]="-10"
+          [sliderMax]="50"
+          [step]="0.1"
+        />
+        <app-measure-input
+          label="Second observation value"
+          formControlName="Y1"
+          [sliderMin]="valueSliderMin()"
+          [sliderMax]="valueSliderMax()"
+          [step]="0.01"
+          [invalid]="y1Invalid()"
+          [invalidMessage]="boundsInvalidMessage"
+        />
       </div>
     </div>
 
     <div class="form-section">
-      <h3>Shape Parameter</h3>
+      <h3>Growth Limits</h3>
 
-      <div class="form-field">
-        <label for="nu">ν (Nu - asymmetry)</label>
-        <input type="number" id="nu" formControlName="nu" step="0.1" min="0.01">
-        <small>1 = symmetric, &lt;1 = front-loaded, &gt;1 = back-loaded</small>
+      <div class="form-row">
+        <app-measure-input
+          label="Lower bound"
+          formControlName="A"
+          [sliderMin]="-20"
+          [sliderMax]="20"
+          [step]="0.1"
+          helperText="The baseline before growth"
+        />
+        <app-measure-input
+          [label]="enableScenario() ? 'Upper bound (high)' : 'Upper bound'"
+          formControlName="K"
+          [sliderMin]="-20"
+          [sliderMax]="20"
+          [step]="0.1"
+          helperText="The ceiling it can't exceed"
+        />
+      </div>
+
+      <div class="scenario-toggle">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            [ngModel]="enableScenario()"
+            (ngModelChange)="enableScenario.set($event); onScenarioToggle()"
+            [ngModelOptions]="{standalone: true}"
+          />
+          <span>Enable scenario range</span>
+        </label>
+      </div>
+
+      @if (enableScenario()) {
+        <app-measure-input
+          label="Upper bound (low)"
+          [ngModel]="K2()"
+          (ngModelChange)="K2.set($event); onK2Change()"
+          [ngModelOptions]="{standalone: true}"
+          [sliderMin]="k2SliderMin()"
+          [sliderMax]="k2SliderMax()"
+          [step]="0.01"
+          [invalid]="k2Invalid()"
+          [invalidMessage]="k2InvalidMessage"
+          helperText="Alternative ceiling for low scenario"
+        />
+      }
+    </div>
+
+    <div class="form-section">
+      <h3>Growth Shape</h3>
+
+      <app-measure-input
+        label="Growth timing bias"
+        formControlName="nu"
+        [sliderMin]="0.1"
+        [sliderMax]="5"
+        [valueMin]="0.01"
+        [step]="0.1"
+        helperText="1 = even, <1 = early burst, >1 = late surge"
+      />
+    </div>
+
+    <div class="form-section">
+      <h3>Chart Options</h3>
+
+      <div class="x-axis-interval">
+        <label class="interval-label">X-axis tick interval</label>
+        <div class="interval-controls">
+          <input
+            type="number"
+            class="interval-input"
+            [value]="xAxisTickInterval() ?? ''"
+            (input)="onXAxisTickIntervalChange($any($event.target).value)"
+            placeholder="Auto"
+            min="0.1"
+            step="any"
+          />
+          @if (xAxisTickInterval() !== null) {
+            <button type="button" class="auto-button" (click)="clearXAxisTickInterval()">
+              Auto
+            </button>
+          }
+        </div>
+        <span class="helper-text">e.g., 12 for months, 7 or 30 for days</span>
       </div>
     </div>
 
     <div class="results-section">
-      <h3>Calculated Parameters</h3>
+      <h3>Predicted Growth</h3>
 
       @if (error()) {
         <div class="error-message">{{ error() }}</div>
       } @else {
-        <div class="result-row">
-          <div class="result-item">
-            <span class="result-label">B (Growth rate)</span>
-            <span class="result-value">{{ calculatedB() !== null ? (calculatedB()! | number: '1.4-4') : '-' }}</span>
+        @if (enableScenario()) {
+          <div class="scenario-results">
+            <div class="scenario-group">
+              <span class="scenario-label">High scenario</span>
+              <div class="result-row">
+                <div class="result-item">
+                  <span class="result-label">Growth rate</span>
+                  <span class="result-value">{{ calculatedB() !== null ? (calculatedB()! | number: '1.4-4') : '-' }}</span>
+                </div>
+                <div class="result-item">
+                  <span class="result-label">Midpoint</span>
+                  <span class="result-value">{{ calculatedT() !== null ? (calculatedT()! | number: '1.4-4') : '-' }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="scenario-group">
+              <span class="scenario-label">Low scenario</span>
+              <div class="result-row">
+                <div class="result-item">
+                  <span class="result-label">Growth rate</span>
+                  <span class="result-value">{{ calculatedB2() !== null ? (calculatedB2()! | number: '1.4-4') : '-' }}</span>
+                </div>
+                <div class="result-item">
+                  <span class="result-label">Midpoint</span>
+                  <span class="result-value">{{ calculatedT2() !== null ? (calculatedT2()! | number: '1.4-4') : '-' }}</span>
+                </div>
+              </div>
+            </div>
           </div>
+        } @else {
+          <div class="result-row">
+            <div class="result-item">
+              <span class="result-label">Growth rate</span>
+              <span class="result-value">{{ calculatedB() !== null ? (calculatedB()! | number: '1.4-4') : '-' }}</span>
+            </div>
 
-          <div class="result-item">
-            <span class="result-label">T (Inflection point)</span>
-            <span class="result-value">{{ calculatedT() !== null ? (calculatedT()! | number: '1.4-4') : '-' }}</span>
+            <div class="result-item">
+              <span class="result-label">Midpoint (when)</span>
+              <span class="result-value">{{ calculatedT() !== null ? (calculatedT()! | number: '1.4-4') : '-' }}</span>
+            </div>
           </div>
-        </div>
+        }
       }
     </div>
 

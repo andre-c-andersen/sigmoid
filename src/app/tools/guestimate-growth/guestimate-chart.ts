@@ -1,9 +1,9 @@
-import { Component, OnInit, ElementRef, ViewChild, AfterViewInit, effect } from '@angular/core';
-import { Chart, registerables } from 'chart.js';
+import { Component, ElementRef, ViewChild, AfterViewInit, effect } from '@angular/core';
+import { Chart, registerables, Filler } from 'chart.js';
 import { SigmoidDataService } from '../../services/sigmoid-data.service';
 import { SigmoidParametersService } from '../../services/sigmoid-parameters.service';
 
-Chart.register(...registerables);
+Chart.register(...registerables, Filler);
 
 @Component({
   selector: 'app-guestimate-chart',
@@ -23,8 +23,10 @@ export class GuestimateChart implements AfterViewInit {
     effect(() => {
       const params = this.parametersService.getParameters()();
       const points = this.parametersService.getDataPoints()();
+      const scenario = this.parametersService.getScenarioParameters()();
+      const xAxisTickInterval = this.parametersService.getXAxisTickInterval()();
       if (params && this.chart) {
-        this.updateChart(params, points);
+        this.updateChart(params, points, scenario, xAxisTickInterval);
       }
     });
   }
@@ -35,8 +37,10 @@ export class GuestimateChart implements AfterViewInit {
     // Render initial chart with current parameters (if available)
     const params = this.parametersService.getParameters()();
     const points = this.parametersService.getDataPoints()();
+    const scenario = this.parametersService.getScenarioParameters()();
+    const xAxisTickInterval = this.parametersService.getXAxisTickInterval()();
     if (params && this.chart) {
-      this.updateChart(params, points);
+      this.updateChart(params, points, scenario, xAxisTickInterval);
     }
   }
 
@@ -48,8 +52,20 @@ export class GuestimateChart implements AfterViewInit {
       type: 'line',
       data: {
         datasets: [
+          // Dataset 0: Shaded region between curves (rendered first, behind lines)
           {
-            label: 'Fitted Sigmoid',
+            label: 'Scenario Range',
+            data: [],
+            borderColor: 'transparent',
+            backgroundColor: 'rgba(255, 159, 64, 0.15)',
+            tension: 0.4,
+            pointRadius: 0,
+            borderWidth: 0,
+            fill: true,
+          },
+          // Dataset 1: Fitted Sigmoid (high scenario)
+          {
+            label: 'High Scenario',
             data: [],
             borderColor: 'rgb(75, 192, 192)',
             backgroundColor: 'rgba(75, 192, 192, 0.1)',
@@ -57,6 +73,17 @@ export class GuestimateChart implements AfterViewInit {
             pointRadius: 0,
             borderWidth: 2,
           },
+          // Dataset 2: Fitted Sigmoid (low scenario)
+          {
+            label: 'Low Scenario',
+            data: [],
+            borderColor: 'rgb(255, 159, 64)',
+            backgroundColor: 'rgba(255, 159, 64, 0.1)',
+            tension: 0.4,
+            pointRadius: 0,
+            borderWidth: 2,
+          },
+          // Dataset 3: Early-Phase Exponential
           {
             label: 'Early-Phase Exponential',
             data: [],
@@ -67,15 +94,49 @@ export class GuestimateChart implements AfterViewInit {
             borderWidth: 2,
             borderDash: [5, 5],
           },
+          // Dataset 4: Input Data Points
           {
             label: 'Input Data Points',
             data: [],
-            borderColor: 'rgb(255, 159, 64)',
-            backgroundColor: 'rgb(255, 159, 64)',
+            borderColor: 'rgb(100, 100, 100)',
+            backgroundColor: 'rgb(100, 100, 100)',
             pointRadius: 8,
             pointHoverRadius: 10,
             showLine: false,
             type: 'scatter',
+          },
+          // Dataset 5: Lower bound
+          {
+            label: 'Lower bound',
+            data: [],
+            borderColor: 'rgba(150, 150, 150, 0.5)',
+            backgroundColor: 'transparent',
+            tension: 0,
+            pointRadius: 0,
+            borderWidth: 1,
+            borderDash: [3, 3],
+          },
+          // Dataset 6: Upper bound (high)
+          {
+            label: 'Upper bound (high)',
+            data: [],
+            borderColor: 'rgba(75, 192, 192, 0.5)',
+            backgroundColor: 'transparent',
+            tension: 0,
+            pointRadius: 0,
+            borderWidth: 1,
+            borderDash: [3, 3],
+          },
+          // Dataset 7: Upper bound (low) - for scenario mode
+          {
+            label: 'Upper bound (low)',
+            data: [],
+            borderColor: 'rgba(255, 159, 64, 0.5)',
+            backgroundColor: 'transparent',
+            tension: 0,
+            pointRadius: 0,
+            borderWidth: 1,
+            borderDash: [3, 3],
           },
         ],
       },
@@ -104,36 +165,148 @@ export class GuestimateChart implements AfterViewInit {
           },
           legend: {
             display: true,
+            labels: {
+              filter: (item: any, chartData: any) => {
+                // Hide legend items with empty data
+                const datasetIndex = item.datasetIndex;
+                const datasets = chartData?.datasets;
+                if (!datasets || !datasets[datasetIndex]) return false;
+                const data = datasets[datasetIndex].data;
+                return data && data.length > 0;
+              }
+            }
           },
         },
       },
     });
   }
 
-  private updateChart(params: any, points: any): void {
+  private updateChart(params: any, points: any, scenario: any, xAxisTickInterval: number | null): void {
     if (!this.chart) return;
 
-    // Generate sigmoid and exponential data
-    const { sigmoid, exponential } = this.dataService.generateSigmoidSeries(params, 200);
+    // Calculate x-axis range that covers both scenarios
+    let xRange = this.dataService.calculateXAxisBounds(params);
 
-    // Update datasets
-    this.chart.data.datasets[0].data = sigmoid;
-    this.chart.data.datasets[1].data = exponential;
+    if (scenario) {
+      const lowParams = {
+        A: params.A,
+        K: scenario.K2,
+        B: scenario.B2,
+        T: scenario.T2,
+        nu: params.nu,
+      };
+      const lowXRange = this.dataService.calculateXAxisBounds(lowParams);
+      // Use the union of both ranges
+      xRange = {
+        min: Math.min(xRange.min, lowXRange.min),
+        max: Math.max(xRange.max, lowXRange.max),
+      };
+    }
 
-    // Update data points markers
+    // Generate sigmoid and exponential data for high scenario
+    const { sigmoid, exponential } = this.dataService.generateSigmoidSeries(params, 200, xRange);
+
+    // Generate low scenario sigmoid if scenario mode is enabled
+    let sigmoidLow: { x: number; y: number }[] = [];
+    if (scenario) {
+      const lowParams = {
+        A: params.A,
+        K: scenario.K2,
+        B: scenario.B2,
+        T: scenario.T2,
+        nu: params.nu,
+      };
+      // Use the same x-range for both curves so they align
+      const lowResult = this.dataService.generateSigmoidSeries(lowParams, 200, xRange);
+      sigmoidLow = lowResult.sigmoid;
+    }
+
+    // Create shaded region (polygon) between the two curves
+    let shadedRegion: { x: number; y: number }[] = [];
+    if (scenario && sigmoid.length > 0 && sigmoidLow.length > 0) {
+      // Go along high curve left-to-right, then low curve right-to-left
+      shadedRegion = [
+        ...sigmoid,
+        ...[...sigmoidLow].reverse(),
+      ];
+    }
+
+    // Dataset 0: Shaded region
+    this.chart.data.datasets[0].data = shadedRegion;
+
+    // Dataset 1: High scenario sigmoid
+    this.chart.data.datasets[1].data = sigmoid;
+    this.chart.data.datasets[1].label = scenario ? 'High Scenario' : 'Fitted Sigmoid';
+
+    // Dataset 2: Low scenario sigmoid
+    this.chart.data.datasets[2].data = sigmoidLow;
+
+    // Dataset 3: Early-Phase Exponential (only show for high scenario)
+    this.chart.data.datasets[3].data = exponential;
+
+    // Dataset 4: Input Data Points
     if (points) {
-      this.chart.data.datasets[2].data = [
+      this.chart.data.datasets[4].data = [
         { x: points.t0, y: points.Y0 },
         { x: points.t1, y: points.Y1 },
       ];
     } else {
-      this.chart.data.datasets[2].data = [];
+      this.chart.data.datasets[4].data = [];
     }
 
-    // Update Y-axis bounds
-    const yBounds = this.dataService.calculateYAxisBounds(params.A, params.K);
+    // Update bound lines
+    if (sigmoid.length > 0) {
+      const xMin = sigmoid[0].x;
+      const xMax = sigmoid[sigmoid.length - 1].x;
+
+      // Dataset 5: Lower bound
+      this.chart.data.datasets[5].data = [
+        { x: xMin, y: params.A },
+        { x: xMax, y: params.A },
+      ];
+
+      // Dataset 6: Upper bound (high)
+      this.chart.data.datasets[6].data = [
+        { x: xMin, y: params.K },
+        { x: xMax, y: params.K },
+      ];
+      this.chart.data.datasets[6].label = scenario ? 'Upper bound (high)' : 'Upper bound';
+      // Use gray color when not in scenario mode
+      (this.chart.data.datasets[6] as any).borderColor = scenario
+        ? 'rgba(75, 192, 192, 0.5)'
+        : 'rgba(150, 150, 150, 0.5)';
+
+      // Dataset 7: Upper bound (low) - only when scenario is enabled
+      if (scenario) {
+        this.chart.data.datasets[7].data = [
+          { x: xMin, y: scenario.K2 },
+          { x: xMax, y: scenario.K2 },
+        ];
+      } else {
+        this.chart.data.datasets[7].data = [];
+      }
+    }
+
+    // Update Y-axis bounds (include K2 if scenario mode)
+    const yMin = params.A;
+    const yMax = scenario ? Math.max(params.K, scenario.K2) : params.K;
+    const yBounds = this.dataService.calculateYAxisBounds(yMin, yMax);
     (this.chart.options.scales as any).y.min = yBounds.min;
     (this.chart.options.scales as any).y.max = yBounds.max;
+
+    // Update X-axis tick interval
+    const xScale = (this.chart.options.scales as any).x;
+    if (xAxisTickInterval !== null && xAxisTickInterval > 0) {
+      xScale.ticks = {
+        ...xScale.ticks,
+        stepSize: xAxisTickInterval,
+      };
+    } else {
+      // Reset to auto
+      if (xScale.ticks) {
+        delete xScale.ticks.stepSize;
+      }
+    }
 
     this.chart.update();
   }

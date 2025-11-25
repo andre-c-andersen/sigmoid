@@ -25,9 +25,12 @@ export class SigmoidDataService {
 
   /**
    * Generate sigmoid and exponential data series
+   * @param params Sigmoid parameters
+   * @param pointCount Number of points to generate
+   * @param xRange Optional custom x-axis range (if not provided, calculated from params)
    */
-  generateSigmoidSeries(params: SigmoidParameters, pointCount: number = 200): SigmoidDataSeries {
-    const { min, max } = this.calculateXAxisBounds(params);
+  generateSigmoidSeries(params: SigmoidParameters, pointCount: number = 200, xRange?: AxisRange): SigmoidDataSeries {
+    const { min, max } = xRange ?? this.calculateXAxisBounds(params);
     const sigmoid: DataPoint[] = [];
     const exponential: DataPoint[] = [];
     const step = (max - min) / pointCount;
@@ -89,9 +92,10 @@ export class SigmoidDataService {
 
   /**
    * Calculate discrete Y-axis range using 1-2-5 sequence
-   * Returns the bounds that should contain dataMin and dataMax
+   * Returns the bounds that should contain dataMin and dataMax with buffer
    */
   calculateYAxisBounds(dataMin: number, dataMax: number): AxisRange {
+    // First calculate nice bounds using 1-2-5 sequence
     let desiredMax = this.upperBound(dataMax);
     let desiredMin = this.lowerBound(dataMin);
 
@@ -105,7 +109,11 @@ export class SigmoidDataService {
       }
     }
 
-    return { min: desiredMin, max: desiredMax };
+    // Add 10% buffer relative to the data range AFTER calculating nice bounds
+    const dataRange = Math.abs(dataMax - dataMin);
+    const buffer = dataRange * 0.1;
+
+    return { min: desiredMin - buffer, max: desiredMax + buffer };
   }
 
   // 1-2-5 sequence helper functions

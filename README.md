@@ -1,4 +1,4 @@
-# sigmoid.tools
+# Sigmoid Tools
 
 Interactive tools for working with sigmoid functions. Visualize growth curves and fit them to your data.
 

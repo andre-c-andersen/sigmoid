@@ -8,12 +8,20 @@ export interface DataPoints {
   Y1: number;
 }
 
+export interface ScenarioParameters {
+  K2: number;  // Low upper bound
+  B2: number;  // Growth rate for low scenario
+  T2: number;  // Midpoint for low scenario
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class SigmoidParametersService {
   private parameters = signal<SigmoidParameters | null>(null);
   private dataPoints = signal<DataPoints | null>(null);
+  private scenarioParameters = signal<ScenarioParameters | null>(null);
+  private xAxisTickInterval = signal<number | null>(null);
 
   getParameters() {
     return this.parameters.asReadonly();
@@ -21,6 +29,14 @@ export class SigmoidParametersService {
 
   getDataPoints() {
     return this.dataPoints.asReadonly();
+  }
+
+  getScenarioParameters() {
+    return this.scenarioParameters.asReadonly();
+  }
+
+  getXAxisTickInterval() {
+    return this.xAxisTickInterval.asReadonly();
   }
 
   setParameters(params: SigmoidParameters): void {
@@ -31,11 +47,23 @@ export class SigmoidParametersService {
     this.dataPoints.set(points);
   }
 
+  setScenarioParameters(params: ScenarioParameters): void {
+    this.scenarioParameters.set(params);
+  }
+
+  setXAxisTickInterval(interval: number | null): void {
+    this.xAxisTickInterval.set(interval);
+  }
+
   clearParameters(): void {
     this.parameters.set(null);
   }
 
   clearDataPoints(): void {
     this.dataPoints.set(null);
+  }
+
+  clearScenarioParameters(): void {
+    this.scenarioParameters.set(null);
   }
 }
