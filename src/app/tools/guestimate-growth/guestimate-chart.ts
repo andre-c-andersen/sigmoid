@@ -227,7 +227,9 @@ export class GuestimateChart implements AfterViewInit {
     }
 
     // Generate sigmoid and exponential data for high scenario
-    const { sigmoid, exponential } = this.dataService.generateSigmoidSeries(params, 200, xRange);
+    // Pass data points so exponential goes through both observations
+    const dataPointsInput = points ? { t0: points.t0, Y0: points.Y0, t1: points.t1, Y1: points.Y1 } : undefined;
+    const { sigmoid, exponential } = this.dataService.generateSigmoidSeries(params, 200, xRange, dataPointsInput);
 
     // Generate low scenario sigmoid if scenario mode is enabled
     let sigmoidLow: { x: number; y: number }[] = [];
@@ -239,7 +241,7 @@ export class GuestimateChart implements AfterViewInit {
         T: scenario.T2,
         nu: params.nu,
       };
-      // Use the same x-range for both curves so they align
+      // Use the same x-range for both curves so they align (no exponential for low scenario)
       const lowResult = this.dataService.generateSigmoidSeries(lowParams, 200, xRange);
       sigmoidLow = lowResult.sigmoid;
     }

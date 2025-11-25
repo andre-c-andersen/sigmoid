@@ -11,6 +11,13 @@ export interface SigmoidDataSeries {
   exponential: DataPoint[];
 }
 
+export interface DataPointsInput {
+  t0: number;
+  Y0: number;
+  t1: number;
+  Y1: number;
+}
+
 export interface AxisRange {
   min: number;
   max: number;
@@ -28,8 +35,9 @@ export class SigmoidDataService {
    * @param params Sigmoid parameters
    * @param pointCount Number of points to generate
    * @param xRange Optional custom x-axis range (if not provided, calculated from params)
+   * @param dataPoints Optional data points for the two-point exponential fit
    */
-  generateSigmoidSeries(params: SigmoidParameters, pointCount: number = 200, xRange?: AxisRange): SigmoidDataSeries {
+  generateSigmoidSeries(params: SigmoidParameters, pointCount: number = 200, xRange?: AxisRange, dataPoints?: DataPointsInput): SigmoidDataSeries {
     const { min, max } = xRange ?? this.calculateXAxisBounds(params);
     const sigmoid: DataPoint[] = [];
     const exponential: DataPoint[] = [];
@@ -40,10 +48,19 @@ export class SigmoidDataService {
         x: t,
         y: this.mathService.evaluateSigmoid(t, params)
       });
-      exponential.push({
-        x: t,
-        y: this.mathService.evaluateEarlyPhaseExponential(t, params)
-      });
+
+      // Use two-point exponential if data points provided, otherwise use early-phase approximation
+      if (dataPoints) {
+        exponential.push({
+          x: t,
+          y: this.mathService.evaluateTwoPointExponential(t, dataPoints.t0, dataPoints.Y0, dataPoints.t1, dataPoints.Y1)
+        });
+      } else {
+        exponential.push({
+          x: t,
+          y: this.mathService.evaluateEarlyPhaseExponential(t, params)
+        });
+      }
     }
 
     return { sigmoid, exponential };

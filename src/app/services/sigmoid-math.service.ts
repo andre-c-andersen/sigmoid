@@ -115,6 +115,29 @@ export class SigmoidMathService {
   }
 
   /**
+   * Calculate exponential that passes through two data points
+   * and approaches 0 as t → -∞
+   * Form: y = a * e^(b*t)
+   * Given (t0, Y0) and (t1, Y1):
+   *   b = ln(Y1/Y0) / (t1 - t0)
+   *   a = Y0 / e^(b*t0)
+   */
+  evaluateTwoPointExponential(t: number, t0: number, Y0: number, t1: number, Y1: number): number {
+    // Handle edge cases
+    if (Y0 <= 0 || Y1 <= 0) {
+      return 0; // Can't fit exponential through non-positive values
+    }
+    if (t0 === t1) {
+      return Y0; // Degenerate case
+    }
+
+    const b = Math.log(Y1 / Y0) / (t1 - t0);
+    const a = Y0 / Math.exp(b * t0);
+
+    return a * Math.exp(b * t);
+  }
+
+  /**
    * Validate two-point fit inputs
    */
   private validateFitInputs(input: TwoPointFitInput): string | null {
