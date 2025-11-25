@@ -13,7 +13,7 @@ Chart.register(...registerables);
 })
 export class GeneralSigmoidChart implements AfterViewInit {
   @ViewChild('chartCanvas') chartCanvas!: ElementRef<HTMLCanvasElement>;
-  private chart?: Chart;
+  private chart?: Chart<'line'>;
 
   // Y-axis scaling configuration (now using 1-2-5 sequence)
   private readonly SHRINK_GRACE_MS = 200;       // Delay before considering shrink
@@ -338,7 +338,7 @@ export class GeneralSigmoidChart implements AfterViewInit {
     const { min, max } = this.calculateYAxisRange();
 
     this.chart = new Chart(this.chartCanvas.nativeElement, {
-      type: 'line',
+      type: 'line' as const,
       data: {
         datasets: [
           {

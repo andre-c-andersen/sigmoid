@@ -1,5 +1,6 @@
 import { Component, ElementRef, ViewChild, AfterViewInit, effect } from '@angular/core';
 import { Chart, registerables, Filler } from 'chart.js';
+import 'chartjs-plugin-dragdata';
 import { SigmoidDataService } from '../../services/sigmoid-data.service';
 import { SigmoidParametersService } from '../../services/sigmoid-parameters.service';
 
@@ -13,7 +14,7 @@ Chart.register(...registerables, Filler);
 })
 export class GuestimateChart implements AfterViewInit {
   @ViewChild('chartCanvas') chartCanvas!: ElementRef<HTMLCanvasElement>;
-  private chart?: Chart;
+  private chart?: Chart<'line'>;
 
   constructor(
     private dataService: SigmoidDataService,
@@ -49,7 +50,7 @@ export class GuestimateChart implements AfterViewInit {
     if (!ctx) return;
 
     this.chart = new Chart(ctx, {
-      type: 'line',
+      type: 'line' as const,
       data: {
         datasets: [
           // Dataset 0: Shaded region between curves (rendered first, behind lines)
@@ -62,6 +63,7 @@ export class GuestimateChart implements AfterViewInit {
             pointRadius: 0,
             borderWidth: 0,
             fill: true,
+            dragData: false,
           },
           // Dataset 1: Fitted Sigmoid (high scenario)
           {
@@ -72,6 +74,7 @@ export class GuestimateChart implements AfterViewInit {
             tension: 0.4,
             pointRadius: 0,
             borderWidth: 2,
+            dragData: false,
           },
           // Dataset 2: Fitted Sigmoid (low scenario)
           {
@@ -82,6 +85,7 @@ export class GuestimateChart implements AfterViewInit {
             tension: 0.4,
             pointRadius: 0,
             borderWidth: 2,
+            dragData: false,
           },
           // Dataset 3: Early-Phase Exponential
           {
@@ -93,8 +97,9 @@ export class GuestimateChart implements AfterViewInit {
             pointRadius: 0,
             borderWidth: 2,
             borderDash: [5, 5],
+            dragData: false,
           },
-          // Dataset 4: Input Data Points
+          // Dataset 4: Input Data Points (DRAGGABLE)
           {
             label: 'Input Data Points',
             data: [],
@@ -102,8 +107,9 @@ export class GuestimateChart implements AfterViewInit {
             backgroundColor: 'rgb(100, 100, 100)',
             pointRadius: 8,
             pointHoverRadius: 10,
+            pointHitRadius: 25,
             showLine: false,
-            type: 'scatter',
+            dragData: true,
           },
           // Dataset 5: Lower bound
           {
@@ -115,6 +121,7 @@ export class GuestimateChart implements AfterViewInit {
             pointRadius: 0,
             borderWidth: 1,
             borderDash: [3, 3],
+            dragData: false,
           },
           // Dataset 6: Upper bound (high)
           {
@@ -126,6 +133,7 @@ export class GuestimateChart implements AfterViewInit {
             pointRadius: 0,
             borderWidth: 1,
             borderDash: [3, 3],
+            dragData: false,
           },
           // Dataset 7: Upper bound (low) - for scenario mode
           {
@@ -137,6 +145,7 @@ export class GuestimateChart implements AfterViewInit {
             pointRadius: 0,
             borderWidth: 1,
             borderDash: [3, 3],
+            dragData: false,
           },
         ],
       },
@@ -174,6 +183,33 @@ export class GuestimateChart implements AfterViewInit {
                 const data = datasets[datasetIndex].data;
                 return data && data.length > 0;
               }
+            }
+          },
+          dragData: {
+            dragX: true,
+            dragY: true,
+            round: 2,
+            showTooltip: true,
+            onDragStart: (e: MouseEvent | TouchEvent, datasetIndex: number, index: number, value: any) => {
+              // Only allow dragging dataset 4 (observations)
+              return datasetIndex === 4;
+            },
+            onDrag: (e: MouseEvent | TouchEvent, datasetIndex: number, index: number, value: any) => {
+              // Enforce Y bounds (between A and K/K2)
+              const params = this.parametersService.getParameters()();
+              const scenario = this.parametersService.getScenarioParameters()();
+              if (!params) return false;
+
+              const minBound = params.A;
+              const maxBound = scenario ? Math.min(params.K, scenario.K2) : params.K;
+
+              if (value.y <= minBound || value.y >= maxBound) {
+                return false;
+              }
+              return true;
+            },
+            onDragEnd: (e: MouseEvent | TouchEvent, datasetIndex: number, index: number, value: any) => {
+              this.onPointDragged(index, value.x, value.y);
             }
           },
         },
@@ -309,5 +345,21 @@ export class GuestimateChart implements AfterViewInit {
     }
 
     this.chart.update();
+  }
+
+  private onPointDragged(index: number, x: number, y: number): void {
+    const currentPoints = this.parametersService.getDataPoints()();
+    if (!currentPoints) return;
+
+    const updatedPoints = { ...currentPoints };
+    if (index === 0) {
+      updatedPoints.t0 = x;
+      updatedPoints.Y0 = y;
+    } else {
+      updatedPoints.t1 = x;
+      updatedPoints.Y1 = y;
+    }
+
+    this.parametersService.setDataPointsFromChart(updatedPoints);
   }
 }

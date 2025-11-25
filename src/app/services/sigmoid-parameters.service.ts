@@ -23,6 +23,9 @@ export class SigmoidParametersService {
   private scenarioParameters = signal<ScenarioParameters | null>(null);
   private xAxisTickInterval = signal<number | null>(null);
 
+  // Signal for chart-initiated data point changes (drag)
+  private dataPointsFromChart = signal<DataPoints | null>(null);
+
   getParameters() {
     return this.parameters.asReadonly();
   }
@@ -39,6 +42,10 @@ export class SigmoidParametersService {
     return this.xAxisTickInterval.asReadonly();
   }
 
+  getDataPointsFromChart() {
+    return this.dataPointsFromChart.asReadonly();
+  }
+
   setParameters(params: SigmoidParameters): void {
     this.parameters.set(params);
   }
@@ -53,6 +60,15 @@ export class SigmoidParametersService {
 
   setXAxisTickInterval(interval: number | null): void {
     this.xAxisTickInterval.set(interval);
+  }
+
+  setDataPointsFromChart(points: DataPoints): void {
+    this.dataPointsFromChart.set(points);
+    this.dataPoints.set(points);
+  }
+
+  clearDataPointsFromChart(): void {
+    this.dataPointsFromChart.set(null);
   }
 
   clearParameters(): void {

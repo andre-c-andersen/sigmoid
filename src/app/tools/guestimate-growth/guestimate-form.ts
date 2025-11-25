@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, effect } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -46,7 +46,21 @@ export class GuestimateForm implements OnInit {
     private fb: FormBuilder,
     private mathService: SigmoidMathService,
     private parametersService: SigmoidParametersService
-  ) {}
+  ) {
+    // Watch for drag updates from chart
+    effect(() => {
+      const draggedPoints = this.parametersService.getDataPointsFromChart()();
+      if (draggedPoints) {
+        this.form.patchValue({
+          t0: draggedPoints.t0,
+          Y0: draggedPoints.Y0,
+          t1: draggedPoints.t1,
+          Y1: draggedPoints.Y1,
+        }, { emitEvent: true });
+        this.parametersService.clearDataPointsFromChart();
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.form = this.fb.group({
