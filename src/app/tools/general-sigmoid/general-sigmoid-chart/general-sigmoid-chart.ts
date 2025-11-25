@@ -390,13 +390,13 @@ export class GeneralSigmoidChart implements AfterViewInit {
             type: 'linear',
             title: {
               display: true,
-              text: 't',
+              text: 'Time',
             },
           },
           y: {
             title: {
               display: true,
-              text: 'Y(t)',
+              text: 'Value',
             },
             min: min,
             max: max,

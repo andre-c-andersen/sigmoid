@@ -1,13 +1,1 @@
-.chart-container {
-  width: 100%;
-  max-width: 800px;
-  margin: 2rem auto;
-  padding: 1rem;
-}
-
-.controls {
-  margin-top: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
+/* Component-specific styles if needed */

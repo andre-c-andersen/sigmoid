@@ -1,57 +1,80 @@
 <div class="chart-container">
   <canvas #chartCanvas></canvas>
+</div>
 
-  <div class="controls">
-    <app-measure-input
-      label="Lower bound"
-      [(ngModel)]="A"
-      (ngModelChange)="onParameterChange()"
-      [sliderMin]="-20"
-      [sliderMax]="20"
-      [step]="0.1"
-      helperText="The baseline before growth"
-    />
+<div class="controls-container">
+  <div class="columns-layout">
+    <!-- Column 1: Bounds -->
+    <div class="form-column">
+      <div class="form-section">
+        <h3>Growth Limits</h3>
 
-    <app-measure-input
-      label="Upper bound"
-      [(ngModel)]="K"
-      (ngModelChange)="onParameterChange()"
-      [sliderMin]="-20"
-      [sliderMax]="20"
-      [step]="0.1"
-      helperText="The ceiling it can't exceed"
-    />
+        <app-measure-input
+          label="Lower bound"
+          [(ngModel)]="A"
+          (ngModelChange)="onParameterChange()"
+          [sliderMin]="-20"
+          [sliderMax]="20"
+          [step]="0.1"
+          helperText="The baseline before growth"
+        />
 
-    <app-measure-input
-      label="Growth rate"
-      [(ngModel)]="B"
-      (ngModelChange)="onParameterChange()"
-      [sliderMin]="0.1"
-      [sliderMax]="5"
-      [valueMin]="0.01"
-      [step]="0.1"
-      helperText="How fast the transition happens"
-    />
+        <app-measure-input
+          label="Upper bound"
+          [(ngModel)]="K"
+          (ngModelChange)="onParameterChange()"
+          [sliderMin]="-20"
+          [sliderMax]="20"
+          [step]="0.1"
+          helperText="The ceiling it can't exceed"
+        />
+      </div>
+    </div>
 
-    <app-measure-input
-      label="Growth timing bias"
-      [(ngModel)]="nu"
-      (ngModelChange)="onParameterChange()"
-      [sliderMin]="0.1"
-      [sliderMax]="5"
-      [valueMin]="0.01"
-      [step]="0.1"
-      helperText="1 = even, <1 = early burst, >1 = late surge"
-    />
+    <!-- Column 2: Growth Parameters -->
+    <div class="form-column">
+      <div class="form-section">
+        <h3>Growth Dynamics</h3>
 
-    <app-measure-input
-      label="Midpoint (when)"
-      [(ngModel)]="T"
-      (ngModelChange)="onParameterChange()"
-      [sliderMin]="-5"
-      [sliderMax]="30"
-      [step]="0.1"
-      helperText="When maximum growth occurs"
-    />
+        <app-measure-input
+          label="Growth rate"
+          [(ngModel)]="B"
+          (ngModelChange)="onParameterChange()"
+          [sliderMin]="0.1"
+          [sliderMax]="5"
+          [valueMin]="0.01"
+          [step]="0.1"
+          helperText="How fast the transition happens"
+        />
+
+        <app-measure-input
+          label="Growth timing bias"
+          [(ngModel)]="nu"
+          (ngModelChange)="onParameterChange()"
+          [sliderMin]="0.1"
+          [sliderMax]="5"
+          [valueMin]="0.01"
+          [step]="0.1"
+          helperText="1 = even, <1 = early burst, >1 = late surge"
+        />
+      </div>
+    </div>
+
+    <!-- Column 3: Timing -->
+    <div class="form-column">
+      <div class="form-section">
+        <h3>Timing</h3>
+
+        <app-measure-input
+          label="Time midpoint"
+          [(ngModel)]="T"
+          (ngModelChange)="onParameterChange()"
+          [sliderMin]="-5"
+          [sliderMax]="30"
+          [step]="0.1"
+          helperText="When maximum growth occurs"
+        />
+      </div>
+    </div>
   </div>
 </div>

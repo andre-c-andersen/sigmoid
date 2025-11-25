@@ -4,16 +4,13 @@ import { Component } from '@angular/core';
   selector: 'app-fit-growth-page',
   imports: [],
   template: `
-    <h2>Fit Sigmoid Growth</h2>
-    <p>Multi-point least squares fitting (coming soon)</p>
+    <div class="tool-page">
+      <h2>Fit Sigmoid Growth</h2>
+      <p class="subtitle coming-soon">Multi-point least squares fitting (coming soon)</p>
+    </div>
   `,
   styles: `
-    h2 {
-      text-align: center;
-    }
-    p {
-      text-align: center;
-      color: #999;
+    .coming-soon {
       font-style: italic;
     }
   `
