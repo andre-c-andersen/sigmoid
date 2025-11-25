@@ -1,5 +1,6 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Chart, registerables } from 'chart.js';
 import { MeasureInput } from '../../../shared/measure-input';
 
@@ -11,7 +12,7 @@ Chart.register(...registerables);
   templateUrl: './general-sigmoid-chart.html',
   styleUrl: './general-sigmoid-chart.css',
 })
-export class GeneralSigmoidChart implements AfterViewInit, OnDestroy {
+export class GeneralSigmoidChart implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('chartCanvas') chartCanvas!: ElementRef<HTMLCanvasElement>;
   private chart?: Chart<'line'>;
   private resizeObserver?: ResizeObserver;
@@ -27,12 +28,20 @@ export class GeneralSigmoidChart implements AfterViewInit, OnDestroy {
   private shrinkStableCountMin = 0;
   private shrinkStableCountMax = 0;
 
+  // Flag to prevent URL updates during initial load
+  private initializing = true;
+
   // Generalized logistic function parameters
   private _A = 0;     // Lower asymptote
   private _K = 1;     // Upper asymptote
   private _B = 1;     // Growth rate
   private _nu = 1;    // Affects near which asymptote growth occurs
   private _T = 0;     // Horizontal shift (inflection point position)
+
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router
+  ) {}
 
   // Getters and setters to ensure numeric types
   get A(): number { return this._A; }
@@ -56,6 +65,47 @@ export class GeneralSigmoidChart implements AfterViewInit, OnDestroy {
   get C(): number { return 1; }
   get Q(): number { return this._nu; }
 
+  ngOnInit(): void {
+    // Read query params to get initial values
+    const params = this.route.snapshot.queryParams;
+
+    this._A = this.parseParam(params['A'], 0);
+    this._K = this.parseParam(params['K'], 1);
+    this._B = this.parseParam(params['B'], 1);
+    this._nu = this.parseParam(params['nu'], 1);
+    this._T = this.parseParam(params['T'], 0);
+
+    // Mark initialization complete after a tick
+    setTimeout(() => {
+      this.initializing = false;
+    }, 0);
+  }
+
+  private parseParam(value: string | undefined, defaultValue: number): number {
+    if (value === undefined || value === '') return defaultValue;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? defaultValue : parsed;
+  }
+
+  private updateQueryParams(): void {
+    if (this.initializing) return;
+
+    const queryParams: Record<string, string> = {
+      A: this._A.toString(),
+      K: this._K.toString(),
+      B: this._B.toString(),
+      nu: this._nu.toString(),
+      T: this._T.toString(),
+    };
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
   ngAfterViewInit(): void {
     this.createChart();
 
@@ -76,6 +126,7 @@ export class GeneralSigmoidChart implements AfterViewInit, OnDestroy {
 
   protected onParameterChange(): void {
     this.updateChart();
+    this.updateQueryParams();
   }
 
   // 1-2-5 sequence helper functions
